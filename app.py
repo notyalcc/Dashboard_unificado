@@ -496,8 +496,18 @@ def app():
             st.download_button("⬇️ Baixar CSV (Planilha)", csv, "voos_backup.csv", "text/csv")
             
             # Botão DB
-            with open(DB_FILE, "rb") as f:
-                st.download_button("⬇️ Baixar Banco de Dados (.db)", f, "voos.db", "application/octet-stream")
+            # Verifica se o arquivo existe antes de abrir. Se não existir (ambiente cloud), recria a partir da memória.
+            if not os.path.exists(DB_FILE):
+                conn = sqlite3.connect(DB_FILE)
+                df_temp = st.session_state['df_voos'].copy()
+                if "Data" in df_temp.columns:
+                    df_temp["Data"] = pd.to_datetime(df_temp["Data"]).dt.strftime("%d/%m/%Y")
+                df_temp.to_sql("voos", conn, if_exists="replace", index=False)
+                conn.close()
+
+            if os.path.exists(DB_FILE):
+                with open(DB_FILE, "rb") as f:
+                    st.download_button("⬇️ Baixar Banco de Dados (.db)", f, "voos.db", "application/octet-stream")
 
     # ================= MAPA ==================
     if menu == "Mapa":
