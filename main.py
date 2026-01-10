@@ -2,6 +2,7 @@
 import streamlit as st
 import dashboard
 import app as drone_app
+from datetime import datetime
 
 # --- Configuração Global da Página ---
 st.set_page_config(
@@ -15,11 +16,22 @@ st.set_page_config(
 st.markdown("""
 <style>
     /* Ajuste do fundo e fontes */
+    .stApp {
+        background-color: #f8f9fa;
+    }
     
     /* Estilo da Sidebar */
     [data-testid="stSidebar"] {
         background: linear-gradient(to bottom, #1e293b, #0f172a) !important;
     }
+    
+    /* Animações Keyframes */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translate3d(0, 40px, 0); }
+        to { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+    
+    /* Elementos da Sidebar */
     [data-testid="stSidebar"] * {
         color: #e2e8f0 !important;
     }
@@ -29,25 +41,58 @@ st.markdown("""
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     
+    /* Hero Section (Topo da Home) */
+    .hero-container {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        padding: 3rem;
+        border-radius: 20px;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
+        animation: fadeInUp 0.8s ease-out;
+    }
+    .hero-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+    }
+    .hero-subtitle {
+        font-size: 1.2rem;
+        opacity: 0.9;
+    }
+
     /* Cards de Seleção na Home */
     .nav-card {
         background-color: white;
         padding: 2rem;
-        border-radius: 15px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        border-radius: 20px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
         text-align: center;
-        transition: transform 0.2s;
-        border: 1px solid #e2e8f0;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(255,255,255,0.5);
         height: 100%;
+        position: relative;
+        overflow: hidden;
+        animation: fadeInUp 1s ease-out;
     }
     .nav-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        border-color: #3b82f6;
+        transform: translateY(-10px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        border-color: #60a5fa;
+    }
+    .nav-card::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 5px;
+        background: linear-gradient(90deg, #3b82f6, #06b6d4);
     }
     .nav-icon {
-        font-size: 3rem;
+        font-size: 4rem;
         margin-bottom: 1rem;
+        transition: transform 0.3s;
+    }
+    .nav-card:hover .nav-icon {
+        transform: scale(1.1) rotate(5deg);
     }
     .nav-title {
         font-size: 1.5rem;
@@ -102,8 +147,22 @@ with st.sidebar:
 
 # --- Lógica de Exibição ---
 if selection == "🏠 Início":
-    st.title("Bem-vindo ao Portal Integrado")
-    st.markdown("Selecione um sistema abaixo para começar:")
+    # Saudação baseada no horário
+    hora_atual = datetime.now().hour
+    if 5 <= hora_atual < 12:
+        saudacao = "Bom dia"
+    elif 12 <= hora_atual < 18:
+        saudacao = "Boa tarde"
+    else:
+        saudacao = "Boa noite"
+
+    # Hero Section
+    st.markdown(f"""
+    <div class="hero-container">
+        <div class="hero-title">{saudacao}, Equipe! 🚀</div>
+        <div class="hero-subtitle">Bem-vindo ao Portal Integrado de Operações. Selecione um módulo abaixo para iniciar suas atividades.</div>
+    </div>
+    """, unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
@@ -112,7 +171,12 @@ if selection == "🏠 Início":
         <div class="nav-card">
             <div class="nav-icon">🚚</div>
             <div class="nav-title">Logística & Malha</div>
-            <div class="nav-desc">Controle de expedição, auditoria de malha fina e KPIs de transportadoras.</div>
+            <div class="nav-desc">
+                Gestão completa de expedição e auditoria.<br><br>
+                ✅ Controle de Malha Fina<br>
+                ✅ KPIs de Transportadoras<br>
+                ✅ Análise de Risco Diária
+            </div>
         </div>
         """, unsafe_allow_html=True)
         
@@ -121,9 +185,27 @@ if selection == "🏠 Início":
         <div class="nav-card">
             <div class="nav-icon">🚁</div>
             <div class="nav-title">Gestão de Drones</div>
-            <div class="nav-desc">Registro de voos, controle de operadores e relatórios operacionais.</div>
+            <div class="nav-desc">
+                Monitoramento aéreo e segurança patrimonial.<br><br>
+                ✅ Registro de Voos e Rotas<br>
+                ✅ Ranking de Operadores<br>
+                ✅ Relatórios Automáticos
+            </div>
         </div>
         """, unsafe_allow_html=True)
+
+    # Seção de Status / Atualizações
+    st.markdown("### 📢 Status do Sistema")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown('<div class="status-box">🟢 <b>Logística:</b> Operando Normalmente</div>', unsafe_allow_html=True)
+    with c2:
+        st.markdown('<div class="status-box">🟢 <b>Drones:</b> Banco de Dados Sincronizado</div>', unsafe_allow_html=True)
+    with c3:
+        st.markdown('<div class="status-box">🔵 <b>Versão:</b> 1.2.0 (Atualizado Hoje)</div>', unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.caption("© 2025 Casas Bahia - Departamento de Prevenção e Perdas | Desenvolvido por Clayton S. Silva")
 
 elif selection == "🚚 Logística (Malha Fina)":
     dashboard.app()
