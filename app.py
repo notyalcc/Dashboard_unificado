@@ -42,6 +42,7 @@ def load_data_from_github():
         file_path = creds.get("file_path_drones")
         if not file_path and "file_path" in creds:
             directory = os.path.dirname(creds["file_path"])
+            # Garante caminho limpo sem barras duplas ou iniciais desnecessárias
             file_path = f"{directory}/voos.csv" if directory else "voos.csv"
         if not file_path: file_path = "voos.csv"
         
@@ -57,6 +58,10 @@ def save_data_to_github(df):
     if not creds: 
         st.error("⚠️ Erro: Credenciais do GitHub não encontradas. Verifique se a seção [github] existe no secrets.toml.")
         return False
+    
+    # Inicializa file_path para garantir que exista no bloco except
+    file_path = "voos.csv"
+    
     try:
         g = Github(creds["token"])
         repo = g.get_repo(creds["repo"])
@@ -73,11 +78,14 @@ def save_data_to_github(df):
         try:
             contents = repo.get_contents(file_path, ref=branch)
             repo.update_file(contents.path, "Atualizando voos via App", csv_content, contents.sha, branch=branch)
-        except GithubException:
-            repo.create_file(file_path, "Criando arquivo de voos", csv_content, branch=branch)
+        except GithubException as e:
+            if e.status == 404:
+                repo.create_file(file_path, "Criando arquivo de voos", csv_content, branch=branch)
+            else:
+                raise e
         return True
     except Exception as e:
-        st.error(f"❌ Erro detalhado ao salvar no GitHub: {e}")
+        st.error(f"❌ Falha ao salvar no GitHub.\nArquivo alvo: '{file_path}'\nErro: {e}")
         return False
 
 # --- FUNÇÃO PRINCIPAL DO APP ---
@@ -482,6 +490,26 @@ def app():
         
         tab1, tab2 = st.tabs(["📥 Importar", "📤 Exportar"])
 
+        # --- ÁREA DE DIAGNÓSTICO ---
+        with st.expander("🔧 Diagnóstico de Conexão GitHub"):
+            if st.button("Testar Conexão GitHub"):
+                creds = get_github_connection()
+                if not creds:
+                    st.error("❌ Credenciais não encontradas.")
+                else:
+                    try:
+                        g = Github(creds["token"])
+                        repo = g.get_repo(creds["repo"])
+                        branch = creds.get("branch", "main")
+                        st.success(f"✅ Conectado ao repositório: {creds['repo']} (Branch: {branch})")
+                        
+                        # Tenta listar arquivos na raiz para provar acesso
+                        contents = repo.get_contents("", ref=branch)
+                        arquivos = [c.name for c in contents]
+                        st.info(f"📂 Arquivos na raiz do repo: {', '.join(arquivos)}")
+                    except Exception as e:
+                        st.error(f"❌ Erro de conexão: {e}")
+
         with tab1:
             st.markdown("### Importar Excel")
             arq = st.file_uploader("Selecione o arquivo .xlsx", type=["xlsx"])
@@ -602,6 +630,3 @@ if __name__ == "__main__":
         layout="wide"
     )
     app()
-
-
-##  streamlit run app.py
