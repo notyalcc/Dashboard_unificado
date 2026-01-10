@@ -75,7 +75,14 @@ def save_data_to_github(df):
                 file_path = "voos.csv"
         
         branch = creds.get("branch", "main")
-        csv_content = df.to_csv(index=False)
+        
+        # Prepara cópia para salvar com data formatada (DD/MM/YYYY)
+        # Isso garante consistência com o carregamento que usa dayfirst=True
+        df_save = df.copy()
+        if "Data" in df_save.columns:
+            df_save["Data"] = pd.to_datetime(df_save["Data"], errors='coerce').dt.strftime("%d/%m/%Y")
+            
+        csv_content = df_save.to_csv(index=False)
         
         try:
             contents = repo.get_contents(file_path, ref=branch)
@@ -519,6 +526,8 @@ def app():
                 
                 # CORREÇÃO: Preenche datas vazias (mesclar células do Excel) para não perder linhas agrupadas
                 if "Data" in base.columns:
+                    # Garante que células vazias ou com espaços sejam tratadas como NaN para o ffill funcionar
+                    base["Data"] = base["Data"].replace(r'^\s*$', None, regex=True)
                     base["Data"] = base["Data"].ffill()
                 
                 st.markdown("#### 🔍 Pré-visualização")
