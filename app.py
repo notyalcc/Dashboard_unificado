@@ -193,7 +193,14 @@ def app():
 
     # Botão útil para desenvolvimento: Limpa o cache se algo travar
     if st.sidebar.button("🧹 Limpar Cache"):
-        del st.session_state['df_voos']
+        # Limpa os dados da sessão
+        if 'df_voos' in st.session_state:
+            del st.session_state['df_voos']
+        # Limpa também o estado dos filtros para evitar gráficos quebrados/vazios ao recarregar
+        keys_to_clear = ["filtro_todos", "filtro_manual", "filtro_dia_ini", "filtro_dia_fim", "filtro_mes_ini", "filtro_mes_fim", "filtro_ano_geral"]
+        for k in keys_to_clear:
+            if k in st.session_state:
+                del st.session_state[k]
         st.rerun()
 
     st.sidebar.markdown("---")
@@ -465,8 +472,10 @@ def app():
                     df_novo["Data"] = pd.to_datetime(df_novo["Data"], dayfirst=True, errors='coerce')
                     
                     if "Unificar" in modo:
-                        st.session_state['df_voos'] = pd.concat([st.session_state['df_voos'], df_novo], ignore_index=True)
-                        st.success("Dados unificados com sucesso!")
+                        combined = pd.concat([st.session_state['df_voos'], df_novo], ignore_index=True)
+                        # Remove duplicatas exatas para evitar repetição de dados ao importar o mesmo arquivo
+                        st.session_state['df_voos'] = combined.drop_duplicates()
+                        st.success("Dados unificados e duplicatas removidas com sucesso!")
                     else:
                         st.session_state['df_voos'] = df_novo
                         st.success("Banco de dados substituído com sucesso!")
