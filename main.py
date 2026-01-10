@@ -17,7 +17,8 @@ st.markdown("""
 <style>
     /* Ajuste do fundo e fontes */
     .stApp {
-        background-color: #f8f9fa;
+        background-color: #0f172a;
+        color: #f8f9fa;
     }
     
     /* Estilo da Sidebar */
