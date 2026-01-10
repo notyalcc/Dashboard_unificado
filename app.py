@@ -488,18 +488,22 @@ def app():
                         combined["Operador"] = combined["Operador"].astype(str).str.strip()
                         # Remove duplicatas exatas para evitar repetição de dados ao importar o mesmo arquivo
                         st.session_state['df_voos'] = combined.drop_duplicates()
-                        st.success("Dados unificados e duplicatas removidas com sucesso!")
                     else:
                         st.session_state['df_voos'] = df_novo
-                        st.success("Banco de dados substituído com sucesso!")
                     
                     # Salva GitHub e SQLite
-                    save_data_to_github(st.session_state['df_voos'])
+                    salvo_github = save_data_to_github(st.session_state['df_voos'])
+                    
                     # Para SQLite, converte data para string
                     df_sqlite = st.session_state['df_voos'].copy()
                     df_sqlite["Data"] = df_sqlite["Data"].dt.strftime("%d/%m/%Y")
                     df_sqlite.to_sql("voos", conn, if_exists="replace", index=False)
                     conn.close()
+
+                    if salvo_github:
+                        st.success("✅ Dados importados e salvos na Nuvem (GitHub) com sucesso!")
+                    else:
+                        st.warning("⚠️ Dados importados apenas Localmente. Não foi possível salvar no GitHub (verifique credenciais).")
 
         with tab2:
             st.markdown("### Exportar Dados")
