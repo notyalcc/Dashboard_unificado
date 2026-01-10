@@ -38,13 +38,16 @@ def load_data_from_github():
     try:
         g = Github(creds["token"])
         repo = g.get_repo(creds["repo"])
-        # Tenta usar caminho específico ou deriva do dashboard (mesma pasta)
+        
+        # Lógica de caminho simplificada (mesma pasta do dashboard ou raiz)
         file_path = creds.get("file_path_drones")
-        if not file_path and "file_path" in creds:
-            directory = os.path.dirname(creds["file_path"])
-            # Garante caminho limpo sem barras duplas ou iniciais desnecessárias
-            file_path = f"{directory}/voos.csv" if directory else "voos.csv"
-        if not file_path: file_path = "voos.csv"
+        if not file_path:
+            base_path = creds.get("file_path", "")
+            if "/" in base_path:
+                directory = base_path.rsplit("/", 1)[0]
+                file_path = f"{directory}/voos.csv"
+            else:
+                file_path = "voos.csv"
         
         branch = creds.get("branch", "main")
         contents = repo.get_contents(file_path, ref=branch)
@@ -55,37 +58,34 @@ def load_data_from_github():
 
 def save_data_to_github(df):
     creds = get_github_connection()
-    if not creds: 
-        st.error("⚠️ Erro: Credenciais do GitHub não encontradas. Verifique se a seção [github] existe no secrets.toml.")
-        return False
-    
-    # Inicializa file_path para garantir que exista no bloco except
-    file_path = "voos.csv"
+    if not creds: return False
     
     try:
         g = Github(creds["token"])
         repo = g.get_repo(creds["repo"])
         
-        # Tenta usar caminho específico ou deriva do dashboard (mesma pasta)
+        # Lógica de caminho simplificada (mesma pasta do dashboard ou raiz)
         file_path = creds.get("file_path_drones")
-        if not file_path and "file_path" in creds:
-            directory = os.path.dirname(creds["file_path"])
-            file_path = f"{directory}/voos.csv" if directory else "voos.csv"
-        if not file_path: file_path = "voos.csv"
+        if not file_path:
+            base_path = creds.get("file_path", "")
+            if "/" in base_path:
+                directory = base_path.rsplit("/", 1)[0]
+                file_path = f"{directory}/voos.csv"
+            else:
+                file_path = "voos.csv"
         
         branch = creds.get("branch", "main")
         csv_content = df.to_csv(index=False)
+        
         try:
             contents = repo.get_contents(file_path, ref=branch)
             repo.update_file(contents.path, "Atualizando voos via App", csv_content, contents.sha, branch=branch)
-        except GithubException as e:
-            if e.status == 404:
-                repo.create_file(file_path, "Criando arquivo de voos", csv_content, branch=branch)
-            else:
-                raise e
+        except GithubException:
+            # Se o arquivo não existe, cria um novo
+            repo.create_file(file_path, "Criando arquivo de voos", csv_content, branch=branch)
         return True
     except Exception as e:
-        st.error(f"❌ Falha ao salvar no GitHub.\nArquivo alvo: '{file_path}'\nErro: {e}")
+        st.error(f"Erro ao salvar no GitHub: {e}")
         return False
 
 # --- FUNÇÃO PRINCIPAL DO APP ---
@@ -630,3 +630,6 @@ if __name__ == "__main__":
         layout="wide"
     )
     app()
+
+
+##  streamlit run app.py
