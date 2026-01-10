@@ -283,8 +283,15 @@ def app():
         # ===== FILTRO DIÁRIO =====
         st.markdown("### 📅 Filtro Diário")
         f1, f2 = st.columns(2)
-        inicio_dia = f1.date_input("Data Início", semana_passada, key="filtro_dia_ini")
-        fim_dia = f2.date_input("Data Fim", hoje, key="filtro_dia_fim")
+        
+        # Ajuste para iniciar com o período dos dados se houver, garantindo que os gráficos não iniciem vazios
+        data_minima = semana_passada
+        if not df_filtrado.empty and pd.notna(df_filtrado["Data"].min()):
+            data_minima = df_filtrado["Data"].min().date()
+        
+        inicio_padrao = data_minima if data_minima < semana_passada else semana_passada
+        inicio_dia = f1.date_input("Data Início", inicio_padrao, format="DD/MM/YYYY", key="filtro_dia_ini")
+        fim_dia = f2.date_input("Data Fim", hoje, format="DD/MM/YYYY", key="filtro_dia_fim")
 
         base_dia = df_filtrado[(df_filtrado["Data"].dt.date >= inicio_dia) & (df_filtrado["Data"].dt.date <= fim_dia)]
 
@@ -327,8 +334,8 @@ def app():
         # ===== GRÁFICO MENSAL =====
         st.markdown("### 📊 Produção por Mês")
         f3, f4 = st.columns(2)
-        inicio_mes = f3.date_input("Data Início (Mensal)", tres_meses, key="filtro_mes_ini")
-        fim_mes = f4.date_input("Data Fim (Mensal)", hoje, key="filtro_mes_fim")
+        inicio_mes = f3.date_input("Data Início (Mensal)", tres_meses, format="DD/MM/YYYY", key="filtro_mes_ini")
+        fim_mes = f4.date_input("Data Fim (Mensal)", hoje, format="DD/MM/YYYY", key="filtro_mes_fim")
 
         base_mes = df_filtrado[(df_filtrado["Data"].dt.date >= inicio_mes) & (df_filtrado["Data"].dt.date <= fim_mes)]
         mes = base_mes.groupby(["Mes","Operador"])[["Rotas","Voos"]].sum().reset_index()
@@ -470,9 +477,15 @@ def app():
                     df_novo = base[COLUNAS_VOOS].copy()
                     # Converte data para datetime para memória
                     df_novo["Data"] = pd.to_datetime(df_novo["Data"], dayfirst=True, errors='coerce')
+                    # Garante tipos numéricos e limpa strings para evitar duplicatas falsas
+                    df_novo["Voos"] = pd.to_numeric(df_novo["Voos"], errors="coerce").fillna(0)
+                    df_novo["Rotas"] = pd.to_numeric(df_novo["Rotas"], errors="coerce").fillna(0)
+                    df_novo["Operador"] = df_novo["Operador"].astype(str).str.strip()
                     
                     if "Unificar" in modo:
                         combined = pd.concat([st.session_state['df_voos'], df_novo], ignore_index=True)
+                        # Garante que os dados originais também estejam limpos para comparação
+                        combined["Operador"] = combined["Operador"].astype(str).str.strip()
                         # Remove duplicatas exatas para evitar repetição de dados ao importar o mesmo arquivo
                         st.session_state['df_voos'] = combined.drop_duplicates()
                         st.success("Dados unificados e duplicatas removidas com sucesso!")
