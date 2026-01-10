@@ -418,7 +418,13 @@ def app():
             df[COLUNAS_VOOS], 
             num_rows="dynamic", 
             width="stretch",
-            key="editor_voos"
+            key="editor_voos",
+            column_config={
+                "Data": st.column_config.DateColumn(
+                    "Data",
+                    format="DD/MM/YYYY"
+                )
+            }
         )
 
         if st.button("💾 Salvar Alterações"):
