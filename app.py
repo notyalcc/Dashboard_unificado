@@ -393,14 +393,18 @@ def app():
                     st.session_state['df_voos'] = pd.concat([st.session_state['df_voos'], novo_memoria], ignore_index=True)
                     
                     # Salva GitHub
-                    save_data_to_github(st.session_state['df_voos'])
+                    salvo_cloud = save_data_to_github(st.session_state['df_voos'])
                     
                     # Salva SQLite (Backup Local)
                     conn = sqlite3.connect(DB_FILE)
                     novo.to_sql("voos", conn, if_exists="append", index=False)
                     conn.close()
                     
-                    st.success("Voo registrado com sucesso!")
+                    if salvo_cloud:
+                        st.success("✅ Voo registrado e salvo na Nuvem (GitHub)!")
+                    else:
+                        st.success("✅ Voo registrado Localmente.")
+                        st.warning("⚠️ Não foi possível salvar no GitHub. Verifique se as 'Secrets' estão configuradas no painel do Streamlit Cloud.")
                 else:
                     st.warning("Por favor, preencha o nome do Operador para cadastrar.")
 
@@ -433,7 +437,7 @@ def app():
                 st.session_state['df_voos'] = df_salvar
                 
                 # Salva GitHub
-                save_data_to_github(df_salvar)
+                salvo_cloud = save_data_to_github(df_salvar)
                 
                 # Salva SQLite
                 # Garante formato de data string (DD/MM/YYYY) para manter o padrão do banco
@@ -443,8 +447,12 @@ def app():
                 df_sqlite.to_sql("voos", conn, if_exists="replace", index=False)
                 conn.close()
                 
-                st.success("Banco de dados atualizado com sucesso!")
-                st.rerun()
+                if salvo_cloud:
+                    st.success("✅ Banco de dados atualizado e sincronizado com GitHub!")
+                    st.rerun()
+                else:
+                    st.warning("⚠️ Banco de dados atualizado APENAS Localmente. Falha ao salvar no GitHub (verifique credenciais).")
+                    # Não executamos st.rerun() imediatamente para dar tempo de ler o aviso
             except Exception as e:
                 st.error(f"Erro ao salvar: {e}")
 
