@@ -516,10 +516,15 @@ def app():
             arq = st.file_uploader("Selecione o arquivo .xlsx", type=["xlsx"])
             if arq:
                 base = pd.read_excel(arq)
+                
+                # CORREÇÃO: Preenche datas vazias (mesclar células do Excel) para não perder linhas agrupadas
+                if "Data" in base.columns:
+                    base["Data"] = base["Data"].ffill()
+                
                 st.markdown("#### 🔍 Pré-visualização")
                 # Garante que a data seja salva como texto DD/MM/YYYY
                 if "Data" in base.columns:
-                    base["Data"] = pd.to_datetime(base["Data"]).dt.strftime("%d/%m/%Y")
+                    base["Data"] = pd.to_datetime(base["Data"], dayfirst=True, errors='coerce').dt.strftime("%d/%m/%Y")
                 st.dataframe(base.head())
                 
                 modo = st.radio("Modo de Importação", ["Unificar (Adicionar aos dados existentes)", "Substituir (Apagar dados antigos)"])
@@ -530,6 +535,8 @@ def app():
                     df_novo = base[COLUNAS_VOOS].copy()
                     # Converte data para datetime para memória
                     df_novo["Data"] = pd.to_datetime(df_novo["Data"], dayfirst=True, errors='coerce')
+                    # Remove linhas que ainda ficaram sem data (ex: linhas totalmente vazias no final do excel)
+                    df_novo = df_novo.dropna(subset=["Data"])
                     # Garante tipos numéricos e limpa strings para evitar duplicatas falsas
                     df_novo["Voos"] = pd.to_numeric(df_novo["Voos"], errors="coerce").fillna(0)
                     df_novo["Rotas"] = pd.to_numeric(df_novo["Rotas"], errors="coerce").fillna(0)
