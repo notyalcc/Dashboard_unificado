@@ -284,13 +284,7 @@ def app():
         st.markdown("### 📅 Filtro Diário")
         f1, f2 = st.columns(2)
         
-        # Ajuste para iniciar com o período dos dados se houver, garantindo que os gráficos não iniciem vazios
-        data_minima = semana_passada
-        if not df_filtrado.empty and pd.notna(df_filtrado["Data"].min()):
-            data_minima = df_filtrado["Data"].min().date()
-        
-        inicio_padrao = data_minima if data_minima < semana_passada else semana_passada
-        inicio_dia = f1.date_input("Data Início", inicio_padrao, format="DD/MM/YYYY", key="filtro_dia_ini")
+        inicio_dia = f1.date_input("Data Início", semana_passada, format="DD/MM/YYYY", key="filtro_dia_ini")
         fim_dia = f2.date_input("Data Fim", hoje, format="DD/MM/YYYY", key="filtro_dia_fim")
 
         base_dia = df_filtrado[(df_filtrado["Data"].dt.date >= inicio_dia) & (df_filtrado["Data"].dt.date <= fim_dia)]
