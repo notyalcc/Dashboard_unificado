@@ -3,6 +3,8 @@ import streamlit as st
 import dashboard
 import app as drone_app
 from datetime import datetime
+import os
+import base64
 
 # --- Configuração Global da Página ---
 st.set_page_config(
@@ -167,10 +169,17 @@ if selection == "🏠 Início":
     
     col1, col2 = st.columns(2)
     
+    # Prepara o ícone: Se existir car.gif, usa ele (Base64), senão mantém o caminhão
+    icon_logistica = "🚚"
+    if os.path.exists("car.gif"):
+        with open("car.gif", "rb") as f:
+            data = base64.b64encode(f.read()).decode()
+        icon_logistica = f'<img src="data:image/gif;base64,{data}" style="width: 250px; vertical-align: middle;">'
+
     with col1:
-        st.markdown("""
+        st.markdown(f"""
         <div class="nav-card">
-            <div class="nav-icon">🚚</div>
+            <div class="nav-icon">{icon_logistica}</div>
             <div class="nav-title">Logística & Malha</div>
             <div class="nav-desc">
                 Gestão completa de expedição e auditoria.<br><br>
@@ -181,10 +190,17 @@ if selection == "🏠 Início":
         </div>
         """, unsafe_allow_html=True)
         
+    # Prepara o ícone: Se existir logo.gif, usa ele (Base64), senão mantém o helicóptero
+    icon_drone = "🚁"
+    if os.path.exists("logo.gif"):
+        with open("logo.gif", "rb") as f:
+            data = base64.b64encode(f.read()).decode()
+        icon_drone = f'<img src="data:image/gif;base64,{data}" style="width: 250px; vertical-align: middle;">'
+
     with col2:
-        st.markdown("""
+        st.markdown(f"""
         <div class="nav-card">
-            <div class="nav-icon">🚁</div>
+            <div class="nav-icon">{icon_drone}</div>
             <div class="nav-title">Gestão de Drones</div>
             <div class="nav-desc">
                 Monitoramento aéreo e segurança patrimonial.<br><br>
