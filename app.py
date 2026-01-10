@@ -105,12 +105,13 @@ def app():
             conn.close()
         
         # Tratamento de tipos
-        if not df_start.empty:
+        # Garante tipagem correta mesmo se o DataFrame estiver vazio (evita erro no .dt)
+        if "Data" in df_start.columns:
             df_start["Data"] = pd.to_datetime(df_start["Data"], dayfirst=True, errors="coerce")
+        if "Voos" in df_start.columns:
             df_start["Voos"] = pd.to_numeric(df_start["Voos"], errors="coerce").fillna(0)
+        if "Rotas" in df_start.columns:
             df_start["Rotas"] = pd.to_numeric(df_start["Rotas"], errors="coerce").fillna(0)
-        else:
-            df_start = pd.DataFrame(columns=COLUNAS_VOOS)
             
         st.session_state['df_voos'] = df_start
 
