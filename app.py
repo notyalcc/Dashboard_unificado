@@ -391,9 +391,17 @@ def app():
 
         # ===== EXPORTAÇÃO =====
         st.markdown("### 📤 Exportar Dados do Período (Filtro Diário)")
-        if st.button("Baixar Excel"):
-            base_dia.to_excel("exportacao_periodo.xlsx", index=False)
-            st.success("Arquivo exportado: exportacao_periodo.xlsx")
+        
+        buffer = io.BytesIO()
+        with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+            base_dia.to_excel(writer, index=False, sheet_name='Relatorio')
+            
+        st.download_button(
+            label="Baixar Excel",
+            data=buffer.getvalue(),
+            file_name="exportacao_periodo.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 
     # ================= REGISTRAR ==================
     if menu == "Registrar Voo":
