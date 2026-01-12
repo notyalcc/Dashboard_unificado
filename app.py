@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import json
 import os
 import io
 from datetime import datetime, timedelta
@@ -15,7 +14,6 @@ from github import Github, GithubException
 # st.set_page_config removido para funcionar no projeto unificado
 
 # ================= ARQUIVOS ==================
-USUARIOS = "usuarios.json"
 DB_FILE = "voos.db"
 COLUNAS_VOOS = ["Data","Operador","Tipo","Rotas","Voos","Obs"]
 
@@ -637,11 +635,11 @@ def app():
                 pdf.cell(0,8,f"{r['Operador']} - {r['Voos']} voos - {r['Rotas']} rotas", ln=True)
 
             pdf.cell(0,10,"Desenvolvido por Clayton S. Silva", ln=True)
-            pdf.output("relatorio.pdf")
-            st.success("PDF gerado!")
-
-            with open("relatorio.pdf", "rb") as f:
-                st.download_button("⬇️ Baixar PDF", f, file_name="relatorio_voos.pdf", mime="application/pdf")
+            
+            # Gera o PDF em memória (string) e converte para bytes (latin-1 é o padrão do FPDF)
+            pdf_bytes = pdf.output(dest='S').encode('latin-1')
+            
+            st.download_button("⬇️ Baixar PDF", data=pdf_bytes, file_name="relatorio_voos.pdf", mime="application/pdf")
 
     # ================= SAIR ==================
     if menu == "Sair":
