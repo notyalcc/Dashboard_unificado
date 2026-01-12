@@ -121,11 +121,18 @@ with st.sidebar:
     # --- Widget de Login Unificado ---
     if not st.session_state['logged_in']:
         with st.expander("🔒 Acesso Administrativo", expanded=True):
+            # Verifica se os segredos foram carregados corretamente
+            if "auth" not in st.secrets:
+                st.error("⚠️ Erro: O arquivo `.streamlit/secrets.toml` não foi encontrado ou está sem a seção [auth]. Verifique o nome do arquivo (deve ser plural).")
+
             usuario = st.text_input("Usuário")
             senha = st.text_input("Senha", type="password")
             if st.button("Entrar"):
-                # Credenciais simples para exemplo (pode expandir depois)
-                if usuario == "admin" and senha == "admin123":
+                # Busca credenciais no st.secrets (seção [auth])
+                valid_user = st.secrets.get("auth", {}).get("username")
+                valid_pass = st.secrets.get("auth", {}).get("password")
+
+                if valid_user and valid_pass and usuario == valid_user and senha == valid_pass:
                     st.session_state['logged_in'] = True
                     st.rerun()
                 else:
