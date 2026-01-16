@@ -116,7 +116,7 @@ if 'logged_in' not in st.session_state:
 # --- Navegação Lateral ---
 with st.sidebar:
     if os.path.exists("image.png"):
-        st.image("image.png", width=200)
+        st.image("image.png", width=100)
     st.title("🏢 Portal Corporativo")
     st.markdown("---")
     
@@ -238,3 +238,4 @@ elif selection == "🚚 Logística (Malha Fina)":
 
 elif selection == "🚁 Controle de Drones":
     drone_app.app()
+
