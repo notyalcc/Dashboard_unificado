@@ -350,6 +350,61 @@ def app():
         fig_geral.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig_geral, width="stretch", key="chart_geral")
 
+        # ===== ANÁLISE DE OCORRÊNCIAS (NOVO) =====
+        st.markdown("---")
+        st.markdown("### 🌪️ Análise de Ocorrências e Clima (Baseado nas Obs)")
+        
+        # Processamento de Texto da coluna Obs para extrair motivos
+        if "Obs" in df_filtrado.columns:
+            # Palavras-chave para categorizar os problemas
+            keywords = {
+                "🌧️ Chuva/Vento": ["CHUVA", "VENTO", "CLIMA", "TEMPO", "NEBLINA"],
+                "🔧 Problema Técnico": ["TÉCNICO", "TECNICO", "ZOOM", "CÂMERA", "CAMERA", "AERONAVE", "APP", "CALIBRAGEM", "HÉLICE", "HELICE"],
+                "👷 Operacional/RH": ["FALTA", "ATRASO", "MÉDICO", "MEDICO", "PASSO MAL", "DDS"],
+                "⚠️ Outros": ["FOGOS", "INTERROMPIDO", "VIRADA"]
+            }
+            
+            occurrences = []
+            # Filtra apenas linhas com observações preenchidas
+            df_obs = df_filtrado[df_filtrado["Obs"].notna()].copy()
+            
+            for idx, row in df_obs.iterrows():
+                obs_text = str(row["Obs"]).upper()
+                for category, words in keywords.items():
+                    if any(word in obs_text for word in words):
+                        occurrences.append(category)
+                        # Conta apenas a primeira categoria encontrada para simplificar
+                        break 
+            
+            if occurrences:
+                df_occ = pd.DataFrame(occurrences, columns=["Motivo"])
+                counts_occ = df_occ["Motivo"].value_counts().reset_index()
+                counts_occ.columns = ["Motivo", "Qtd"]
+                
+                c_occ1, c_occ2 = st.columns([2, 1])
+                with c_occ1:
+                    fig_occ = px.pie(counts_occ, names="Motivo", values="Qtd", title="Principais Causas de Impacto na Operação", hole=0.4)
+                    fig_occ.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                    st.plotly_chart(fig_occ, use_container_width=True)
+                with c_occ2:
+                    st.write("#### Detalhes")
+                    st.dataframe(counts_occ, hide_index=True, use_container_width=True)
+            else:
+                st.info("ℹ️ Nenhuma ocorrência específica (Chuva, Técnico, etc.) identificada nas observações do período filtrado.")
+
+        # ===== EFICIÊNCIA (NOVO) =====
+        st.markdown("### ⚡ Eficiência Operacional (Rotas por Voo)")
+        df_eff = df_filtrado.groupby("Operador")[["Rotas", "Voos"]].sum().reset_index()
+        df_eff = df_eff[df_eff["Voos"] > 0] # Evita divisão por zero
+        df_eff["Rotas_por_Voo"] = (df_eff["Rotas"] / df_eff["Voos"]).round(1)
+        
+        fig_eff = px.bar(df_eff.sort_values("Rotas_por_Voo", ascending=False), 
+                         x="Operador", y="Rotas_por_Voo", text_auto=True,
+                         title="Média de Rotas vistoriadas por Voo",
+                         color="Rotas_por_Voo", color_continuous_scale="Blues")
+        fig_eff.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_title="Rotas / Voo")
+        st.plotly_chart(fig_eff, use_container_width=True)
+
         # ===== EXPORTAÇÃO =====
         st.markdown("### 📤 Exportar Dados do Período (Filtro Diário)")
         

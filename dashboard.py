@@ -673,6 +673,32 @@ def app():
             *   **Por Operação:** Verifica se o esforço de fiscalização está proporcional ao volume de cada tipo de operação (LML, Direta, etc.).
             *   **Share de Transportadora:** Mostra a representatividade de cada empresa. Transportadoras com maior fatia do gráfico devem ter atenção redobrada, pois qualquer desvio impacta muito o resultado global da unidade.
             """)
+            
+        st.markdown("---")
+        st.subheader("🎯 Matriz de Desempenho: Volume vs. Qualidade")
+        
+        # Scatter Plot: Cruza Volume (X) com Taxa de Retenção (Y)
+        # Isso ajuda a identificar quem opera muito e erra pouco (Ideal) vs quem opera pouco e erra muito.
+        df_scatter = df_filtered.groupby('TRANSPORTADORA')[['LIBERADOS', 'MALHA']].sum().reset_index()
+        df_scatter['TOTAL'] = df_scatter['LIBERADOS'] + df_scatter['MALHA']
+        df_scatter['RETENCAO_PCT'] = df_scatter.apply(calculate_retention_rate, axis=1)
+        
+        # Filtra volumes muito baixos para limpar o gráfico (opcional, aqui mantive todos)
+        fig_scatter = px.scatter(df_scatter, x='LIBERADOS', y='RETENCAO_PCT', 
+                                 size='TOTAL', color='TRANSPORTADORA',
+                                 hover_name='TRANSPORTADORA',
+                                 title=f"Dispersão: Volume vs. Taxa de Retenção ({periodo_label})",
+                                 labels={'LIBERADOS': 'Volume Liberado (Eixo X)', 'RETENCAO_PCT': 'Taxa de Retenção % (Eixo Y)'})
+        
+        # Linha de referência (Média Global)
+        if not df_scatter.empty:
+            avg_retention = taxa_malha_global
+            fig_scatter.add_hline(y=avg_retention, line_dash="dash", line_color="red", annotation_text="Média Global")
+        
+        fig_scatter.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+        st.plotly_chart(fig_scatter, use_container_width=True)
+        
+        st.caption("💡 **Como ler:** O cenário ideal são transportadoras no canto **inferior direito** (Alto Volume, Baixa Retenção). O canto **superior esquerdo** é crítico (Baixo Volume, Alta Retenção).")
 
     with tab_dia:
         st.subheader("Análise Diária")
