@@ -409,9 +409,21 @@ def app():
 
         st.markdown("## 📋 Registrar Voo")
 
+        # Lista de operadores existentes para facilitar o cadastro
+        lista_ops = sorted(df["Operador"].dropna().astype(str).unique().tolist())
+        opcoes_ops = ["🆕 Novo Operador..."] + lista_ops
+        
+        # Selectbox fora do form para permitir interatividade
+        op_selecionado = st.selectbox("Selecione o Operador", options=opcoes_ops)
+
         with st.form("form_registro", clear_on_submit=True):
             data = st.date_input("Data", datetime.now(), format="DD/MM/YYYY")
-            operador = st.text_input("Operador")
+            
+            if op_selecionado == "🆕 Novo Operador...":
+                operador_input = st.text_input("Digite o Nome do Operador")
+            else:
+                operador_input = None
+
             tipo = st.selectbox("Tipo", ["FIXO","RESERVA"])
             rotas = st.number_input("Rotas", min_value=0, value=1)
             voos = st.number_input("Voos", min_value=0, value=1)
@@ -420,9 +432,11 @@ def app():
             submitted = st.form_submit_button("Salvar")
 
             if submitted:
-                if operador:
+                operador_final = operador_input if op_selecionado == "🆕 Novo Operador..." else op_selecionado
+                
+                if operador_final:
                     data_formatada = data.strftime("%d/%m/%Y")
-                    novo = pd.DataFrame([[data_formatada,operador,tipo,rotas,voos,obs]], columns=COLUNAS_VOOS)
+                    novo = pd.DataFrame([[data_formatada,operador_final,tipo,rotas,voos,obs]], columns=COLUNAS_VOOS)
                     
                     # Atualiza Session State
                     # Converte a data do novo registro para datetime para manter consistência no DF em memória
