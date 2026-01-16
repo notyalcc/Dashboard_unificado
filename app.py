@@ -281,16 +281,37 @@ def app():
         
         op_lista = sorted(df["Operador"].unique().tolist())
         
-        # Checkbox para controle total (Igual ao teste)
-        todos = st.checkbox("Selecionar Todos", value=True, key="chk_todos")
+        col_f1, col_f2 = st.columns(2)
         
-        # Define uma chave dinâmica para forçar o reset do componente quando o checkbox muda
-        key_filtro = "filtro_todos" if todos else "filtro_manual"
-        
-        if todos:
-            op_selecionados = st.multiselect("Filtrar por Operador", op_lista, default=op_lista, key=key_filtro)
-        else:
-            op_selecionados = st.multiselect("Filtrar por Operador", op_lista, default=[], key=key_filtro)
+        with col_f1:
+            # Checkbox para controle total (Igual ao teste)
+            todos = st.checkbox("Selecionar Todos", value=True, key="chk_todos")
+            
+            # Define uma chave dinâmica para forçar o reset do componente quando o checkbox muda
+            key_filtro = "filtro_todos" if todos else "filtro_manual"
+            
+            if todos:
+                op_selecionados = st.multiselect("Filtrar por Operador", op_lista, default=op_lista, key=key_filtro)
+            else:
+                op_selecionados = st.multiselect("Filtrar por Operador", op_lista, default=[], key=key_filtro)
+
+        with col_f2:
+            # Filtro de Data
+            if not df.empty and "Data" in df.columns and df["Data"].notna().any():
+                min_d = df["Data"].min().date()
+                max_d = df["Data"].max().date()
+            else:
+                min_d = datetime.now().date()
+                max_d = datetime.now().date()
+
+            datas_selecionadas = st.date_input(
+                "Filtrar por Data",
+                value=(min_d, max_d),
+                min_value=min_d,
+                max_value=max_d,
+                format="DD/MM/YYYY",
+                key="filtro_data_geral"
+            )
         
         # Aplicação do filtro
         if not op_selecionados:
@@ -298,6 +319,17 @@ def app():
             df_filtrado = df.iloc[0:0] # Cria um DF vazio com as mesmas colunas
         else:
             df_filtrado = df[df["Operador"].isin(op_selecionados)]
+            
+            # Aplica filtro de data
+            if isinstance(datas_selecionadas, tuple):
+                if len(datas_selecionadas) == 2:
+                    start_d, end_d = datas_selecionadas
+                    df_filtrado = df_filtrado[(df_filtrado["Data"].dt.date >= start_d) & (df_filtrado["Data"].dt.date <= end_d)]
+                elif len(datas_selecionadas) == 1:
+                    start_d = datas_selecionadas[0]
+                    df_filtrado = df_filtrado[df_filtrado["Data"].dt.date == start_d]
+            else:
+                df_filtrado = df_filtrado[df_filtrado["Data"].dt.date == datas_selecionadas]
 
         # ===== KPIs (Cards) =====
         st.markdown("<br>", unsafe_allow_html=True)
