@@ -7,6 +7,7 @@ import tempfile
 from github import Github, GithubException
 from sqlalchemy import create_engine, inspect
 from pandas.api.types import is_datetime64_any_dtype
+import utils # Importa o novo módulo
 
 # --- Configuração da Página ---
 # st.set_page_config removido para funcionar no projeto unificado
@@ -32,51 +33,7 @@ def get_database_engine(url):
 engine = get_database_engine(DATABASE_URL)
 
 # --- FUNÇÕES PARA GITHUB (PERSISTÊNCIA NA NUVEM) ---
-def get_github_connection():
-    """Verifica se existem credenciais do GitHub configuradas."""
-    try:
-        if "github" in st.secrets:
-            return st.secrets["github"]
-    except Exception:
-        return None
-    return None
-
-def load_data_from_github():
-    """Lê o arquivo CSV direto do repositório."""
-    creds = get_github_connection()
-    if not creds: return None
-    
-    try:
-        g = Github(creds["token"])
-        repo = g.get_repo(creds["repo"])
-        contents = repo.get_contents(creds["file_path"], ref=creds["branch"])
-        # Lê o CSV da URL raw ou decodifica o conteúdo
-        df = pd.read_csv(io.StringIO(contents.decoded_content.decode("utf-8")))
-        return df
-    except Exception as e:
-        # Se o arquivo não existir ainda, retorna None para criar vazio
-        return None
-
-def save_data_to_github(df):
-    """Salva o DataFrame como CSV no repositório (commit)."""
-    creds = get_github_connection()
-    if not creds: return False
-    
-    try:
-        g = Github(creds["token"])
-        repo = g.get_repo(creds["repo"])
-        csv_content = df.to_csv(index=False)
-        
-        try:
-            contents = repo.get_contents(creds["file_path"], ref=creds["branch"])
-            repo.update_file(contents.path, "Atualizando dados via Dashboard", csv_content, contents.sha, branch=creds["branch"])
-        except GithubException:
-            # Se o arquivo não existe, cria um novo
-            repo.create_file(creds["file_path"], "Criando arquivo de dados", csv_content, branch=creds["branch"])
-        return True
-    except Exception as e:
-        st.error(f"Erro ao salvar no GitHub: {e}")
-        return False
+# Funções movidas para utils.py para evitar duplicação
 
 # Função para salvar dados carregados via Upload no banco de dados persistente
 def save_uploaded_data(df, replace=False):
@@ -105,7 +62,9 @@ def save_uploaded_data(df, replace=False):
                         st.sidebar.info(f"ℹ️ {rows_before - rows_after} registros duplicados foram ignorados (já existiam no banco).")
             
             # Tenta salvar no GitHub
-            salvo_github = save_data_to_github(st.session_state['df_dados'])
+            creds = utils.get_github_connection()
+            path = creds["file_path"] if creds else "dados.csv"
+            salvo_github = utils.save_data_to_github(st.session_state['df_dados'], path, "Atualizando dados via Dashboard")
             
             # Salva no banco local também (backup/cache)
             if not salvo_github:
@@ -253,7 +212,7 @@ def app():
     if 'df_dados' not in st.session_state:
         try:
             # Tenta ler do GitHub primeiro (se configurado)
-            df_start = load_data_from_github()
+            df_start = utils.load_data_from_github("file_path")
             
             if df_start is None:
                 # Se não tem GitHub ou falhou, tenta ler do banco local (SQLite)
@@ -350,7 +309,9 @@ def app():
                             st.session_state['df_dados'] = pd.concat([st.session_state['df_dados'], df_new], ignore_index=True)
                         
                         # Persistência
-                        salvo = save_data_to_github(st.session_state['df_dados'])
+                        creds = utils.get_github_connection()
+                        path = creds["file_path"] if creds else "dados.csv"
+                        salvo = utils.save_data_to_github(st.session_state['df_dados'], path)
                         if not salvo:
                             # Salva o dataframe COMPLETO para garantir consistência (Excel + Novos)
                             st.session_state['df_dados'].to_sql(TABLE_NAME, engine, if_exists='replace', index=False)
@@ -869,7 +830,9 @@ def app():
                     
                     st.session_state['df_dados'] = df_full
                     
-                    salvo = save_data_to_github(df_full)
+                    creds = utils.get_github_connection()
+                    path = creds["file_path"] if creds else "dados.csv"
+                    salvo = utils.save_data_to_github(df_full, path)
                     if not salvo:
                         df_full.to_sql(TABLE_NAME, engine, if_exists='replace', index=False)
                     

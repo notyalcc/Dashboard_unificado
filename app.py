@@ -9,6 +9,7 @@ from streamlit_folium import st_folium
 from fpdf import FPDF
 import sqlite3
 from github import Github, GithubException
+import utils # Importa o novo módulo
 
 # ================= CONFIG ==================
 # st.set_page_config removido para funcionar no projeto unificado
@@ -21,84 +22,14 @@ LAT = -22.6238754
 LON = -43.2217511
 
 # ================= BASE ==================
-# Funções para GitHub (Adaptadas do dashboard.py)
-def get_github_connection():
-    try:
-        if "github" in st.secrets:
-            return st.secrets["github"]
-    except Exception:
-        return None
-    return None
-
-def load_data_from_github():
-    creds = get_github_connection()
-    if not creds: return None
-    try:
-        g = Github(creds["token"])
-        repo = g.get_repo(creds["repo"])
-        
-        # Lógica de caminho simplificada (mesma pasta do dashboard ou raiz)
-        file_path = creds.get("file_path_drones")
-        if not file_path:
-            base_path = creds.get("file_path", "")
-            if "/" in base_path:
-                directory = base_path.rsplit("/", 1)[0]
-                file_path = f"{directory}/voos.csv"
-            else:
-                file_path = "voos.csv"
-        
-        branch = creds.get("branch", "main")
-        contents = repo.get_contents(file_path, ref=branch)
-        df = pd.read_csv(io.StringIO(contents.decoded_content.decode("utf-8")))
-        return df
-    except:
-        return None
-
-def save_data_to_github(df):
-    creds = get_github_connection()
-    if not creds: return False
-    
-    try:
-        g = Github(creds["token"])
-        repo = g.get_repo(creds["repo"])
-        
-        # Lógica de caminho simplificada (mesma pasta do dashboard ou raiz)
-        file_path = creds.get("file_path_drones")
-        if not file_path:
-            base_path = creds.get("file_path", "")
-            if "/" in base_path:
-                directory = base_path.rsplit("/", 1)[0]
-                file_path = f"{directory}/voos.csv"
-            else:
-                file_path = "voos.csv"
-        
-        branch = creds.get("branch", "main")
-        
-        # Prepara cópia para salvar com data formatada (DD/MM/YYYY)
-        # Isso garante consistência com o carregamento que usa dayfirst=True
-        df_save = df.copy()
-        if "Data" in df_save.columns:
-            df_save["Data"] = pd.to_datetime(df_save["Data"], errors='coerce').dt.strftime("%d/%m/%Y")
-            
-        csv_content = df_save.to_csv(index=False)
-        
-        try:
-            contents = repo.get_contents(file_path, ref=branch)
-            repo.update_file(contents.path, "Atualizando voos via App", csv_content, contents.sha, branch=branch)
-        except GithubException:
-            # Se o arquivo não existe, cria um novo
-            repo.create_file(file_path, "Criando arquivo de voos", csv_content, branch=branch)
-        return True
-    except Exception as e:
-        st.error(f"Erro ao salvar no GitHub: {e}")
-        return False
+# Funções movidas para utils.py
 
 # --- FUNÇÃO PRINCIPAL DO APP ---
 def app():
     # Inicialização de Dados (Session State)
     if 'df_voos' not in st.session_state:
         # 1. Tenta GitHub
-        df_start = load_data_from_github()
+        df_start = utils.load_data_from_github("file_path_drones")
         
         # 2. Se falhar, tenta SQLite Local
         if df_start is None:
@@ -477,7 +408,22 @@ def app():
                     st.session_state['df_voos'] = pd.concat([st.session_state['df_voos'], novo_memoria], ignore_index=True)
                     
                     # Salva GitHub
-                    salvo_cloud = save_data_to_github(st.session_state['df_voos'])
+                    # Prepara cópia para salvar com data formatada (DD/MM/YYYY)
+                    df_save = st.session_state['df_voos'].copy()
+                    if "Data" in df_save.columns:
+                        df_save["Data"] = pd.to_datetime(df_save["Data"], errors='coerce').dt.strftime("%d/%m/%Y")
+                    
+                    creds = utils.get_github_connection()
+                    # Lógica para determinar o path (igual estava antes, mas agora usando creds obtidas)
+                    path = "voos.csv"
+                    if creds:
+                        path = creds.get("file_path_drones")
+                        if not path:
+                            base = creds.get("file_path", "")
+                            if "/" in base: path = f"{base.rsplit('/', 1)[0]}/voos.csv"
+                            else: path = "voos.csv"
+                            
+                    salvo_cloud = utils.save_data_to_github(df_save, path, "Atualizando voos via App")
                     
                     # Salva SQLite (Backup Local)
                     conn = sqlite3.connect(DB_FILE)
@@ -521,7 +467,19 @@ def app():
                 st.session_state['df_voos'] = df_salvar
                 
                 # Salva GitHub
-                salvo_cloud = save_data_to_github(df_salvar)
+                df_save = df_salvar.copy()
+                if "Data" in df_save.columns:
+                    df_save["Data"] = pd.to_datetime(df_save["Data"], errors='coerce').dt.strftime("%d/%m/%Y")
+                
+                creds = utils.get_github_connection()
+                path = "voos.csv"
+                if creds:
+                    path = creds.get("file_path_drones")
+                    if not path:
+                        base = creds.get("file_path", "")
+                        if "/" in base: path = f"{base.rsplit('/', 1)[0]}/voos.csv"
+                
+                salvo_cloud = utils.save_data_to_github(df_save, path, "Atualizando voos via App")
                 
                 # Salva SQLite
                 # Garante formato de data string (DD/MM/YYYY) para manter o padrão do banco
@@ -553,7 +511,7 @@ def app():
         # --- ÁREA DE DIAGNÓSTICO ---
         with st.expander("🔧 Diagnóstico de Conexão GitHub"):
             if st.button("Testar Conexão GitHub"):
-                creds = get_github_connection()
+                creds = utils.get_github_connection()
                 if not creds:
                     st.error("❌ Credenciais não encontradas.")
                 else:
@@ -613,7 +571,19 @@ def app():
                         st.session_state['df_voos'] = df_novo
                     
                     # Salva GitHub e SQLite
-                    salvo_github = save_data_to_github(st.session_state['df_voos'])
+                    df_save = st.session_state['df_voos'].copy()
+                    if "Data" in df_save.columns:
+                        df_save["Data"] = pd.to_datetime(df_save["Data"], errors='coerce').dt.strftime("%d/%m/%Y")
+                        
+                    creds = utils.get_github_connection()
+                    path = "voos.csv"
+                    if creds:
+                        path = creds.get("file_path_drones")
+                        if not path:
+                            base = creds.get("file_path", "")
+                            if "/" in base: path = f"{base.rsplit('/', 1)[0]}/voos.csv"
+                    
+                    salvo_github = utils.save_data_to_github(df_save, path, "Importando dados via App")
                     
                     # Para SQLite, converte data para string
                     df_sqlite = st.session_state['df_voos'].copy()
@@ -699,6 +669,9 @@ if __name__ == "__main__":
         layout="wide"
     )
     app()
+
+
+##  streamlit run app.py
 
 
 ##  streamlit run app.py
