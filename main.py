@@ -9,7 +9,7 @@ import base64
 # --- Configuração Global da Página ---
 st.set_page_config(
     page_title="Portal Integrado - Logística & Drones",
-    page_icon="🏢",
+    page_icon="image.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -238,4 +238,5 @@ elif selection == "🚚 Logística (Malha Fina)":
 
 elif selection == "🚁 Controle de Drones":
     drone_app.app()
+
 
