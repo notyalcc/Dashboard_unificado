@@ -359,12 +359,27 @@ def app():
         fig_dia.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig_dia, width="stretch", key="chart_dia")
 
-        # ===== RANKING =====
-        st.markdown("### 🥇 Ranking dos Operadores")
-        ranking = dia.sort_values("Voos", ascending=False)
-        for i, row in ranking.head(5).iterrows():
-            medalha = "🥇" if i == ranking.index[0] else "🥈" if i == ranking.index[1] else "🥉"
-            st.markdown(f"<div class='rank'>{medalha} {row['Operador']} — {int(row['Voos'])} voos</div>", unsafe_allow_html=True)
+        # ===== RANKING & PIZZA =====
+        col_rank, col_pie = st.columns(2)
+        
+        with col_rank:
+            st.markdown("### 🥇 Ranking dos Operadores")
+            ranking = dia.sort_values("Voos", ascending=False)
+            if not ranking.empty:
+                for i, row in ranking.head(5).iterrows():
+                    # Lógica segura para medalhas
+                    if i == ranking.index[0]: medalha = "🥇"
+                    elif len(ranking) > 1 and i == ranking.index[1]: medalha = "🥈"
+                    else: medalha = "🥉"
+                    st.markdown(f"<div class='rank'>{medalha} {row['Operador']} — {int(row['Voos'])} voos</div>", unsafe_allow_html=True)
+
+        with col_pie:
+            st.markdown("### 🍰 Distribuição por Tipo")
+            tipo_dist = base_dia.groupby("Tipo")["Voos"].sum().reset_index()
+            if not tipo_dist.empty:
+                fig_pie = px.pie(tipo_dist, names="Tipo", values="Voos", hole=0.4, color_discrete_sequence=["#0052cc", "#2f80ed", "#90cdf4"])
+                fig_pie.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                st.plotly_chart(fig_pie, use_container_width=True)
 
         # ===== META =====
         st.markdown("### 🎯 Meta Mensal")
