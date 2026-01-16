@@ -699,6 +699,19 @@ def app():
         st.plotly_chart(fig_scatter, use_container_width=True)
         
         st.caption("💡 **Como ler:** O cenário ideal são transportadoras no canto **inferior direito** (Alto Volume, Baixa Retenção). O canto **superior esquerdo** é crítico (Baixo Volume, Alta Retenção).")
+        
+        with st.expander("📘 Guia Detalhado: Interpretando a Matriz de Desempenho"):
+            st.markdown("""
+            Este gráfico cruza duas dimensões críticas para avaliar a eficiência das transportadoras:
+            1.  **Eixo Horizontal (X):** Volume de Operação (Quantidade de veículos liberados). Quanto mais à direita, maior a operação.
+            2.  **Eixo Vertical (Y):** Taxa de Retenção (%). Quanto mais alto, maior a incidência de malha fina (problemas/auditoria).
+
+            **Análise por Quadrantes:**
+            *   🟢 **Alta Performance (Canto Inferior Direito):** Transportadoras com **Alto Volume** e **Baixa Retenção**. São as parceiras ideais, que operam muito e geram pouco retrabalho.
+            *   🟡 **Em Observação (Canto Superior Direito):** Transportadoras com **Alto Volume** mas **Alta Retenção**. Elas movimentam a operação, mas sobrecarregam a auditoria. Ações corretivas aqui têm alto impacto no resultado global.
+            *   🔴 **Crítico (Canto Superior Esquerdo):** Transportadoras com **Baixo Volume** e **Alta Retenção**. Operam pouco e quase sempre dão problema. Avaliar viabilidade da parceria.
+            *   ⚪ **Nicho (Canto Inferior Esquerdo):** Transportadoras com **Baixo Volume** e **Baixa Retenção**. Operam pouco, mas não geram problemas.
+            """)
 
     with tab_dia:
         st.subheader("Análise Diária")
