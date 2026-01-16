@@ -30,12 +30,16 @@ O sistema possui **Login Unificado**, persistência de dados híbrida (**SQLite*
 *   **KPIs em Tempo Real:** Fluxo total, veículos liberados, retidos e taxa de retenção global.
 *   **Rankings:** Top transportadoras por volume e por retenção.
 *   **Análise Temporal:** Visões diária, mensal e anual.
+*   **Matriz de Desempenho:** Gráfico de dispersão (Scatter Plot) cruzando volume vs. qualidade.
+*   **Mapa de Calor:** Identificação visual de dias críticos e padrões de risco.
 *   **Funil de Auditoria:** Visualização do processo de sorteio e fiscalização.
 *   **Gestão de Dados:** Importação de Excel/CSV, edição manual e backup na nuvem.
 
 ### 🚁 Módulo Drones
 *   **Registro de Voos:** Formulário para cadastro de operações (Rotas, Voos, Tipo).
 *   **Metas e Projeções:** Acompanhamento visual de metas mensais por operador.
+*   **Análise de Ocorrências:** Categorização automática de problemas (Clima, Técnico, etc.) via processamento de texto.
+*   **Eficiência Operacional:** Indicador de produtividade (Rotas por Voo).
 *   **Mapa Interativo:** Visualização via satélite do local de operação (Folium).
 *   **Relatórios:** Geração automática de PDF e exportação para Excel.
 
@@ -104,6 +108,7 @@ Dashboar_unifinificado/
 ├── main.py              # Arquivo Principal (Menu e Login)
 ├── dashboard.py         # Módulo de Logística
 ├── app.py               # Módulo de Drones
+├── utils.py             # Funções auxiliares e conexão GitHub
 ├── requirements.txt     # Lista de dependências
 ├── logo.png             # Logotipo da empresa
 ├── usuarios.json        # (Opcional) Controle de usuários local
@@ -124,4 +129,3 @@ Dashboar_unifinificado/
 
 Este projeto é de uso corporativo interno. Todos os direitos reservados.
 ```
-
