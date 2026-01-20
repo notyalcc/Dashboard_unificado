@@ -287,7 +287,8 @@ def app():
         dia = base_dia.groupby("Operador")[["Rotas","Voos"]].sum().reset_index()
         fig_dia = px.bar(dia, x="Operador", y=["Rotas","Voos"], barmode="group", text_auto=True,
                         template="plotly_white", color_discrete_sequence=["#0052cc", "#2f80ed"])
-        fig_dia.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+        fig_dia.update_traces(texttemplate='%{y:,.0f}', textfont_size=20)
+        fig_dia.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_tickformat=',.0f')
         st.plotly_chart(fig_dia, width="stretch", key="chart_dia")
 
         # ===== RANKING =====
@@ -330,7 +331,8 @@ def app():
         fig_mes = px.bar(mes, x="Operador", y=["Rotas","Voos"], barmode="group",
                         facet_col="Mes", text_auto=True,
                         template="plotly_white", color_discrete_sequence=["#0052cc", "#2f80ed"])
-        fig_mes.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+        fig_mes.update_traces(texttemplate='%{y:,.0f}', textfont_size=20)
+        fig_mes.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_tickformat=',.0f')
         st.plotly_chart(fig_mes, width="stretch", key="chart_mes")
 
         # ===== TOTAL GERAL =====
@@ -347,7 +349,8 @@ def app():
         geral = df_geral.groupby("Operador")[["Rotas","Voos"]].sum().reset_index()
         fig_geral = px.bar(geral, x="Operador", y=["Rotas","Voos"], barmode="group", text_auto=True,
                         template="plotly_white", color_discrete_sequence=["#0052cc", "#2f80ed"])
-        fig_geral.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+        fig_geral.update_traces(texttemplate='%{y:,.0f}', textfont_size=20)
+        fig_geral.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_tickformat=',.0f')
         st.plotly_chart(fig_geral, width="stretch", key="chart_geral")
 
         # ===== ANÁLISE DE OCORRÊNCIAS (NOVO) =====
@@ -402,6 +405,7 @@ def app():
                          x="Operador", y="Rotas_por_Voo", text_auto=True,
                          title="Média de Rotas vistoriadas por Voo",
                          color="Rotas_por_Voo", color_continuous_scale="Blues")
+        fig_eff.update_traces(textfont_size=20)
         fig_eff.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_title="Rotas / Voo")
         st.plotly_chart(fig_eff, use_container_width=True)
 
