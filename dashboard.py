@@ -535,7 +535,7 @@ def app():
         top_vol = df_filtered.groupby('TRANSPORTADORA')['LIBERADOS'].sum().reset_index().sort_values(by='LIBERADOS', ascending=True)
         fig_top_vol = px.bar(top_vol, x='LIBERADOS', y='TRANSPORTADORA', orientation='h', text_auto=True, title=f"Ranking de Fluxo ({periodo_label})", color='LIBERADOS', color_continuous_scale='Teal')
         fig_top_vol.update_traces(textfont_size=20, texttemplate='%{x:,.0f}')
-        fig_top_vol.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_title="Volume Liberado", yaxis_title=None, showlegend=False, xaxis_tickformat=',.0f', coloraxis_colorbar_tickformat=',.0f')
+        fig_top_vol.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_title=None, yaxis_title=None, showlegend=False, xaxis_showticklabels=False, coloraxis_showscale=False)
         st.plotly_chart(fig_top_vol, key="rank_vol", width="stretch")
         st.caption("📝 **Fluxo:** Volume total de veículos que saíram liberados (sem auditoria).")
 
@@ -543,7 +543,7 @@ def app():
         top_malha = df_filtered.groupby('TRANSPORTADORA')['MALHA'].sum().reset_index().sort_values(by='MALHA', ascending=True)
         fig_top_malha = px.bar(top_malha, x='MALHA', y='TRANSPORTADORA', orientation='h', text_auto=True, title=f"Ranking de Retenção ({periodo_label})", color='MALHA', color_continuous_scale='Reds')
         fig_top_malha.update_traces(textfont_size=20, texttemplate='%{x:,.0f}')
-        fig_top_malha.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_title="Qtd. Veículos Retidos", yaxis_title=None, showlegend=False, xaxis_tickformat=',.0f', coloraxis_colorbar_tickformat=',.0f')
+        fig_top_malha.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_title=None, yaxis_title=None, showlegend=False, xaxis_showticklabels=False, coloraxis_showscale=False)
         st.plotly_chart(fig_top_malha, key="rank_malha", width="stretch")
         st.caption("📝 **Retenção:** Quantidade absoluta de veículos parados para auditoria (Malha Fina).")
 
@@ -676,6 +676,7 @@ def app():
             """)
             
         st.markdown("---")
+        '''
         st.subheader("🎯 Matriz de Desempenho: Volume vs. Qualidade")
         
         # Scatter Plot: Cruza Volume (X) com Taxa de Retenção (Y)
@@ -713,7 +714,7 @@ def app():
             *   🔴 **Crítico (Canto Superior Esquerdo):** Transportadoras com **Baixo Volume** e **Alta Retenção**. Operam pouco e quase sempre dão problema. Avaliar viabilidade da parceria.
             *   ⚪ **Nicho (Canto Inferior Esquerdo):** Transportadoras com **Baixo Volume** e **Baixa Retenção**. Operam pouco, mas não geram problemas.
             """)
-
+        '''
     with tab_dia:
         st.subheader("Análise Diária")
         st.markdown("ℹ️ *Esta visão permite isolar dias específicos para entender o que aconteceu em datas com anomalias identificadas na Visão Geral.*")

@@ -296,8 +296,8 @@ def app():
         ranking = dia.sort_values("Voos", ascending=False)
         for i, row in ranking.head(5).iterrows():
             medalha = "🥇" if i == ranking.index[0] else "🥈" if i == ranking.index[1] else "🥉"
-            st.markdown(f"<div class='rank'>{medalha} {row['Operador']} — {int(row['Voos'])} voos</div>", unsafe_allow_html=True)
-
+            st.markdown(f"<div class='rank'>{medalha} {row['Operador']} — {int(row['Voos'])} voos | {int(row['Rotas'])} rondas</div>", unsafe_allow_html=True)
+        '''
         # ===== META =====
         st.markdown("### 🎯 Meta Mensal")
         meta = st.number_input("Meta de voos por operador", 50, 2000, 225)
@@ -308,7 +308,7 @@ def app():
             perc = min(row["Voos"] / meta, 1.0)
             st.write(f"{row['Operador']} - {int(row['Voos'])}/{meta}")
             st.progress(perc)
-
+        
         # ===== PROJEÇÃO =====
         st.markdown("### 📈 Projeção do Mês")
         voos_ate_hoje = mes_atual["Voos"].sum()
@@ -317,7 +317,7 @@ def app():
 
         st.metric("Projeção de voos no mês", projecao)
 
-
+        '''
 
         # ===== GRÁFICO MENSAL =====
         st.markdown("### 📊 Produção por Mês")
@@ -394,7 +394,7 @@ def app():
                     st.dataframe(counts_occ, hide_index=True, use_container_width=True)
             else:
                 st.info("ℹ️ Nenhuma ocorrência específica (Chuva, Técnico, etc.) identificada nas observações do período filtrado.")
-
+        '''
         # ===== EFICIÊNCIA (NOVO) =====
         st.markdown("### ⚡ Eficiência Operacional (Rotas por Voo)")
         df_eff = df_filtrado.groupby("Operador")[["Rotas", "Voos"]].sum().reset_index()
@@ -408,7 +408,7 @@ def app():
         fig_eff.update_traces(textfont_size=20)
         fig_eff.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_title="Rotas / Voo")
         st.plotly_chart(fig_eff, use_container_width=True)
-
+        '''
         # ===== EXPORTAÇÃO =====
         st.markdown("### 📤 Exportar Dados do Período (Filtro Diário)")
         
