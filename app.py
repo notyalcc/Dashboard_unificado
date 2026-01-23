@@ -357,13 +357,30 @@ def app():
         st.markdown("---")
         st.markdown("### 🌪️ Baseado nas análises de ocorrência e clima")
         
-        f_occ1, f_occ2 = st.columns(2)
-        inicio_occ = f_occ1.date_input("Data Início (Ocorrências)", tres_meses, format="DD/MM/YYYY", key="filtro_occ_ini")
-        fim_occ = f_occ2.date_input("Data Fim (Ocorrências)", hoje, format="DD/MM/YYYY", key="filtro_occ_fim")
+        # Filtro Linha do Tempo (Slider) - Estilo Excel
+        # Usamos df filtrado por operador, mas aberto em datas para permitir navegação livre
+        df_base_occ = df[df["Operador"].isin(op_selecionados)] if not df.empty else df
+        
+        min_timeline = df_base_occ["Data"].min().date() if not df_base_occ.empty and "Data" in df_base_occ.columns else tres_meses
+        max_timeline = df_base_occ["Data"].max().date() if not df_base_occ.empty and "Data" in df_base_occ.columns else hoje
+        
+        if min_timeline >= max_timeline: min_timeline = max_timeline - timedelta(days=1)
+        
+        # Define valor inicial (últimos 3 meses ou todo o período se for menor)
+        start_val = tres_meses if tres_meses >= min_timeline and tres_meses <= max_timeline else min_timeline
 
-        df_occ_filtered = df_filtrado[
-            (df_filtrado["Data"].dt.date >= inicio_occ) & 
-            (df_filtrado["Data"].dt.date <= fim_occ)
+        periodo_occ = st.slider(
+            "📅 Linha do Tempo",
+            min_value=min_timeline,
+            max_value=max_timeline,
+            value=(start_val, max_timeline),
+            format="DD/MM/YYYY",
+            key="timeline_occ"
+        )
+
+        df_occ_filtered = df_base_occ[
+            (df_base_occ["Data"].dt.date >= periodo_occ[0]) & 
+            (df_base_occ["Data"].dt.date <= periodo_occ[1])
         ]
 
         # Processamento de Texto da coluna Obs para extrair motivos
