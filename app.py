@@ -286,7 +286,7 @@ def app():
         st.markdown("### 📊 Produção por Operador (Dia)")
         dia = base_dia.groupby("Operador")[["Rotas","Voos"]].sum().reset_index()
         fig_dia = px.bar(dia, x="Operador", y=["Rotas","Voos"], barmode="group", text_auto=True,
-                        template="plotly_white", color_discrete_sequence=["#0052cc", "#2f80ed"])
+                        template="plotly_white", color_discrete_sequence=["#0052cc", "#3eac50"])
         fig_dia.update_traces(texttemplate='%{y:,.0f}', textfont_size=20)
         fig_dia.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_tickformat=',.0f')
         st.plotly_chart(fig_dia, width="stretch", key="chart_dia")
@@ -330,7 +330,7 @@ def app():
 
         fig_mes = px.bar(mes, x="Operador", y=["Rotas","Voos"], barmode="group",
                         facet_col="Mes", text_auto=True,
-                        template="plotly_white", color_discrete_sequence=["#0052cc", "#2f80ed"])
+                        template="plotly_white", color_discrete_sequence=["#0052cc", "#3eac50"])
         fig_mes.update_traces(texttemplate='%{y:,.0f}', textfont_size=20)
         fig_mes.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_tickformat=',.0f')
         st.plotly_chart(fig_mes, width="stretch", key="chart_mes")
@@ -348,17 +348,26 @@ def app():
 
         geral = df_geral.groupby("Operador")[["Rotas","Voos"]].sum().reset_index()
         fig_geral = px.bar(geral, x="Operador", y=["Rotas","Voos"], barmode="group", text_auto=True,
-                        template="plotly_white", color_discrete_sequence=["#0052cc", "#2f80ed"])
+                        template="plotly_white", color_discrete_sequence=["#0052cc", "#3eac50"])
         fig_geral.update_traces(texttemplate='%{y:,.0f}', textfont_size=20)
         fig_geral.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_tickformat=',.0f')
         st.plotly_chart(fig_geral, width="stretch", key="chart_geral")
 
         # ===== ANÁLISE DE OCORRÊNCIAS (NOVO) =====
         st.markdown("---")
-        st.markdown("### 🌪️ Análise de Ocorrências e Clima (Baseado nas Obs)")
+        st.markdown("### 🌪️ Baseado nas análises de ocorrência e clima")
         
+        f_occ1, f_occ2 = st.columns(2)
+        inicio_occ = f_occ1.date_input("Data Início (Ocorrências)", tres_meses, format="DD/MM/YYYY", key="filtro_occ_ini")
+        fim_occ = f_occ2.date_input("Data Fim (Ocorrências)", hoje, format="DD/MM/YYYY", key="filtro_occ_fim")
+
+        df_occ_filtered = df_filtrado[
+            (df_filtrado["Data"].dt.date >= inicio_occ) & 
+            (df_filtrado["Data"].dt.date <= fim_occ)
+        ]
+
         # Processamento de Texto da coluna Obs para extrair motivos
-        if "Obs" in df_filtrado.columns:
+        if "Obs" in df_occ_filtered.columns:
             # Palavras-chave para categorizar os problemas
             keywords = {
                 "🌧️ Chuva/Vento": ["CHUVA", "VENTO", "CLIMA", "TEMPO", "NEBLINA"],
@@ -369,13 +378,15 @@ def app():
             
             occurrences = []
             # Filtra apenas linhas com observações preenchidas
-            df_obs = df_filtrado[df_filtrado["Obs"].notna()].copy()
+            df_obs = df_occ_filtered[df_occ_filtered["Obs"].notna()].copy()
+            df_obs["Categoria_Detectada"] = None
             
             for idx, row in df_obs.iterrows():
                 obs_text = str(row["Obs"]).upper()
                 for category, words in keywords.items():
                     if any(word in obs_text for word in words):
                         occurrences.append(category)
+                        df_obs.at[idx, "Categoria_Detectada"] = category
                         # Conta apenas a primeira categoria encontrada para simplificar
                         break 
             
@@ -392,6 +403,19 @@ def app():
                 with c_occ2:
                     st.write("#### Detalhes")
                     st.dataframe(counts_occ, hide_index=True, use_container_width=True)
+                
+                st.markdown("#### 📝 Relatório Detalhado das Ocorrências")
+                df_detalhe = df_obs.dropna(subset=["Categoria_Detectada"])[["Data", "Operador", "Categoria_Detectada", "Obs"]].sort_values("Data")
+                st.dataframe(
+                    df_detalhe,
+                    hide_index=True,
+                    use_container_width=True,
+                    column_config={
+                        "Data": st.column_config.DateColumn("Data", format="DD/MM/YYYY"),
+                        "Categoria_Detectada": "Motivo Identificado",
+                        "Obs": "Observação Completa"
+                    }
+                )
             else:
                 st.info("ℹ️ Nenhuma ocorrência específica (Chuva, Técnico, etc.) identificada nas observações do período filtrado.")
         '''
