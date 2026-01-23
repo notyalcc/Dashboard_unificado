@@ -285,9 +285,10 @@ def app():
         # ===== GRAFICO DIÁRIO =====
         st.markdown("### 📊 Produção por Operador (Dia)")
         dia = base_dia.groupby("Operador")[["Rotas","Voos"]].sum().reset_index()
-        fig_dia = px.bar(dia, x="Operador", y=["Rotas","Voos"], barmode="group", text_auto=True,
+        fig_dia = px.bar(dia, x="Operador", y=["Rotas","Voos"], barmode="group",
                         template="plotly_white", color_discrete_sequence=["#0052cc", "#3eac50"])
-        fig_dia.update_traces(texttemplate='%{y:,.0f}', textfont_size=20)
+        fig_dia.update_traces(textfont_size=20)
+        fig_dia.for_each_trace(lambda t: t.update(text=[f"{y:,.0f}".replace(",", ".") for y in t.y], texttemplate='%{text}'))
         fig_dia.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_tickformat=',.0f')
         st.plotly_chart(fig_dia, width="stretch", key="chart_dia")
 
@@ -329,9 +330,10 @@ def app():
         mes = base_mes.groupby(["Mes","Operador"])[["Rotas","Voos"]].sum().reset_index()
 
         fig_mes = px.bar(mes, x="Operador", y=["Rotas","Voos"], barmode="group",
-                        facet_col="Mes", text_auto=True,
+                        facet_col="Mes",
                         template="plotly_white", color_discrete_sequence=["#0052cc", "#3eac50"])
-        fig_mes.update_traces(texttemplate='%{y:,.0f}', textfont_size=20)
+        fig_mes.update_traces(textfont_size=20)
+        fig_mes.for_each_trace(lambda t: t.update(text=[f"{y:,.0f}".replace(",", ".") for y in t.y], texttemplate='%{text}'))
         fig_mes.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_tickformat=',.0f')
         st.plotly_chart(fig_mes, width="stretch", key="chart_mes")
 
@@ -347,9 +349,10 @@ def app():
             df_geral = df_filtrado
 
         geral = df_geral.groupby("Operador")[["Rotas","Voos"]].sum().reset_index()
-        fig_geral = px.bar(geral, x="Operador", y=["Rotas","Voos"], barmode="group", text_auto=True,
+        fig_geral = px.bar(geral, x="Operador", y=["Rotas","Voos"], barmode="group",
                         template="plotly_white", color_discrete_sequence=["#0052cc", "#3eac50"])
-        fig_geral.update_traces(texttemplate='%{y:,.0f}', textfont_size=20)
+        fig_geral.update_traces(textfont_size=20)
+        fig_geral.for_each_trace(lambda t: t.update(text=[f"{y:,.0f}".replace(",", ".") for y in t.y], texttemplate='%{text}'))
         fig_geral.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_tickformat=',.0f')
         st.plotly_chart(fig_geral, width="stretch", key="chart_geral")
 
@@ -442,11 +445,12 @@ def app():
         df_eff = df_eff[df_eff["Voos"] > 0] # Evita divisão por zero
         df_eff["Rotas_por_Voo"] = (df_eff["Rotas"] / df_eff["Voos"]).round(1)
         
+        df_eff["TXT"] = df_eff["Rotas_por_Voo"].apply(lambda x: str(x).replace(".", ","))
         fig_eff = px.bar(df_eff.sort_values("Rotas_por_Voo", ascending=False), 
-                         x="Operador", y="Rotas_por_Voo", text_auto=True,
+                         x="Operador", y="Rotas_por_Voo", text="TXT",
                          title="Média de Rotas vistoriadas por Voo",
                          color="Rotas_por_Voo", color_continuous_scale="Blues")
-        fig_eff.update_traces(textfont_size=20)
+        fig_eff.update_traces(textfont_size=20, texttemplate='%{text}')
         fig_eff.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_title="Rotas / Voo")
         st.plotly_chart(fig_eff, use_container_width=True)
         '''

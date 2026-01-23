@@ -17,11 +17,6 @@ st.set_page_config(
 # --- Estilo CSS Personalizado (Para ficar "Lindo") ---
 st.markdown("""
 <style>
-    /* Ajuste do fundo e fontes */
-    .stApp {
-        background-color: #0f172a;
-        color: #f8f9fa;
-    }
     
     /* Estilo da Sidebar */
     [data-testid="stSidebar"] {
@@ -34,8 +29,8 @@ st.markdown("""
         to { opacity: 1; transform: translate3d(0, 0, 0); }
     }
     
-    /* Elementos da Sidebar */
-    [data-testid="stSidebar"] * {
+    /* Elementos de Texto da Sidebar (Exclui Inputs para evitar texto branco em fundo branco) */
+    [data-testid="stSidebar"] .stMarkdown, [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, [data-testid="stSidebar"] label, [data-testid="stSidebar"] .stRadio label {
         color: #e2e8f0 !important;
     }
     
@@ -238,6 +233,3 @@ elif selection == "🚚 Logística (Malha Fina)":
 
 elif selection == "🚁 Controle de Drones":
     drone_app.app()
-
-
-

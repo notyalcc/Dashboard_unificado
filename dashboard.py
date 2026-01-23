@@ -521,10 +521,10 @@ def app():
     taxa_malha_prev = (total_malha_prev / total_veiculos_prev * 100) if total_veiculos_prev > 0 else 0
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Fluxo Total (Veículos)", f"{total_veiculos:,.0f}", f"{total_veiculos - total_veiculos_prev:,.0f} vs período anterior")
-    col2.metric("Veículos Liberados", f"{total_liberados:,.0f}", f"{total_liberados - total_liberados_prev:,.0f} vs período anterior")
-    col3.metric("Retidos em Malha", f"{total_malha:,.0f}", f"{total_malha - total_malha_prev:,.0f} vs período anterior", delta_color="inverse")
-    col4.metric("Taxa de Retenção Global", f"{taxa_malha_global:.2f}%", f"{taxa_malha_global - taxa_malha_prev:.2f} p.p.", delta_color="inverse")
+    col1.metric("Fluxo Total (Veículos)", f"{total_veiculos:,.0f}".replace(",", "."), f"{total_veiculos - total_veiculos_prev:,.0f}".replace(",", ".") + " vs período anterior")
+    col2.metric("Veículos Liberados", f"{total_liberados:,.0f}".replace(",", "."), f"{total_liberados - total_liberados_prev:,.0f}".replace(",", ".") + " vs período anterior")
+    col3.metric("Retidos em Malha", f"{total_malha:,.0f}".replace(",", "."), f"{total_malha - total_malha_prev:,.0f}".replace(",", ".") + " vs período anterior", delta_color="inverse")
+    col4.metric("Taxa de Retenção Global", f"{taxa_malha_global:.2f}".replace(".", ",") + "%", f"{taxa_malha_global - taxa_malha_prev:.2f}".replace(".", ",") + " p.p.", delta_color="inverse")
 
     st.markdown("---")
 
@@ -533,16 +533,18 @@ def app():
 
     with col_r1:
         top_vol = df_filtered.groupby('TRANSPORTADORA')['LIBERADOS'].sum().reset_index().sort_values(by='LIBERADOS', ascending=True)
-        fig_top_vol = px.bar(top_vol, x='LIBERADOS', y='TRANSPORTADORA', orientation='h', text_auto=True, title=f"Ranking de Fluxo ({periodo_label})", color='LIBERADOS', color_continuous_scale='Teal')
-        fig_top_vol.update_traces(textfont_size=20, texttemplate='%{x:,.0f}')
+        top_vol['TXT_VOL'] = top_vol['LIBERADOS'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
+        fig_top_vol = px.bar(top_vol, x='LIBERADOS', y='TRANSPORTADORA', orientation='h', text='TXT_VOL', title=f"Ranking de Fluxo ({periodo_label})", color='LIBERADOS', color_continuous_scale='Teal')
+        fig_top_vol.update_traces(textfont_size=20, texttemplate='%{text}')
         fig_top_vol.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_title=None, yaxis_title=None, showlegend=False, xaxis_showticklabels=False, coloraxis_showscale=False)
         st.plotly_chart(fig_top_vol, key="rank_vol", width="stretch")
         st.caption("📝 **Fluxo:** Volume total de veículos que saíram liberados (sem auditoria).")
 
     with col_r2:
         top_malha = df_filtered.groupby('TRANSPORTADORA')['MALHA'].sum().reset_index().sort_values(by='MALHA', ascending=True)
-        fig_top_malha = px.bar(top_malha, x='MALHA', y='TRANSPORTADORA', orientation='h', text_auto=True, title=f"Ranking de Retenção ({periodo_label})", color='MALHA', color_continuous_scale='Reds')
-        fig_top_malha.update_traces(textfont_size=20, texttemplate='%{x:,.0f}')
+        top_malha['TXT_MALHA'] = top_malha['MALHA'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
+        fig_top_malha = px.bar(top_malha, x='MALHA', y='TRANSPORTADORA', orientation='h', text='TXT_MALHA', title=f"Ranking de Retenção ({periodo_label})", color='MALHA', color_continuous_scale='Reds')
+        fig_top_malha.update_traces(textfont_size=20, texttemplate='%{text}')
         fig_top_malha.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_title=None, yaxis_title=None, showlegend=False, xaxis_showticklabels=False, coloraxis_showscale=False)
         st.plotly_chart(fig_top_malha, key="rank_malha", width="stretch")
         st.caption("📝 **Retenção:** Quantidade absoluta de veículos parados para auditoria (Malha Fina).")
@@ -568,11 +570,12 @@ def app():
             st.markdown("##### 🎲 Fluxo do Sorteio (Funil)")
             data_funnel = dict(
                 number=[total_veiculos, total_liberados, total_malha],
-                stage=["Veículos na Portaria", "🟢 Liberados (Viagem)", "🔴 Retidos (Malha Fina)"]
+                stage=["Veículos na Portaria", "🟢 Liberados (Viagem)", "🔴 Retidos (Malha Fina)"],
+                text=[f"{x:,.0f}".replace(",", ".") for x in [total_veiculos, total_liberados, total_malha]]
             )
-            fig_funnel = px.funnel(data_funnel, x='number', y='stage', color='stage', 
+            fig_funnel = px.funnel(data_funnel, x='number', y='stage', color='stage', text='text',
                                    color_discrete_map={"Veículos na Portaria": "#2E86C1", "🟢 Liberados (Viagem)": "#27AE60", "🔴 Retidos (Malha Fina)": "#C0392B"})
-            fig_funnel.update_traces(texttemplate="%{value:,.0f}")
+            fig_funnel.update_traces(texttemplate="%{text}")
             fig_funnel.update_layout(showlegend=False, template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_tickformat=',.0f')
             st.plotly_chart(fig_funnel, width="stretch")
 
@@ -629,9 +632,10 @@ def app():
 
         col_g1, col_g2 = st.columns(2)
         with col_g1:
-            fig_vol_dia_g = px.bar(df_geral_view, x='DATA', y='LIBERADOS', color='TRANSPORTADORA', barmode='group', title=f"Fluxo de Saída por Dia ({periodo_g_label})", text_auto=True)
+            df_geral_view['TXT_VOL'] = df_geral_view['LIBERADOS'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
+            fig_vol_dia_g = px.bar(df_geral_view, x='DATA', y='LIBERADOS', color='TRANSPORTADORA', barmode='group', title=f"Fluxo de Saída por Dia ({periodo_g_label})", text='TXT_VOL')
             fig_vol_dia_g.update_xaxes(tickformat="%d/%m/%Y")
-            fig_vol_dia_g.update_traces(textfont_size=20, texttemplate='%{y:,.0f}')
+            fig_vol_dia_g.update_traces(textfont_size=20, texttemplate='%{text}')
             fig_vol_dia_g.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_title="Data", yaxis_title="Volume", yaxis_tickformat=',.0f')
             st.plotly_chart(fig_vol_dia_g, key="geral_vol_dia", width="stretch")
             st.caption("📊 **Volume Operacional:** Quantidade de veículos liberados dia a dia.")
@@ -639,10 +643,11 @@ def app():
             df_dia_malha_g = df_geral_view.groupby(['DATA', 'TRANSPORTADORA'])[['LIBERADOS', 'MALHA']].sum().reset_index()
             # Cálculo da Taxa de Retenção (%) usando função auxiliar
             df_dia_malha_g['MALHA_PCT'] = df_dia_malha_g.apply(calculate_retention_rate, axis=1)
+            df_dia_malha_g['TXT_PCT'] = df_dia_malha_g['MALHA_PCT'].apply(lambda x: f"{x:.2f}".replace(".", ",") + "%")
             
-            fig_malha_dia_g = px.bar(df_dia_malha_g, x='DATA', y='MALHA_PCT', color='TRANSPORTADORA', title=f"Taxa de Retenção % por Dia ({periodo_g_label})")
+            fig_malha_dia_g = px.bar(df_dia_malha_g, x='DATA', y='MALHA_PCT', color='TRANSPORTADORA', title=f"Taxa de Retenção % por Dia ({periodo_g_label})", text='TXT_PCT')
             fig_malha_dia_g.update_xaxes(tickformat="%d/%m/%Y")
-            fig_malha_dia_g.update_traces(texttemplate='%{y:.2f}%', textposition='auto', textfont_size=20)
+            fig_malha_dia_g.update_traces(texttemplate='%{text}', textposition='auto', textfont_size=20)
             fig_malha_dia_g.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_title="Data", yaxis_title="Retenção (%)")
             st.plotly_chart(fig_malha_dia_g, key="geral_malha_dia", width="stretch")
             st.caption("🛡️ **Intensidade da Fiscalização:** Porcentagem de veículos auditados em relação ao total de saídas.")
@@ -755,9 +760,10 @@ def app():
 
         col_d1, col_d2 = st.columns(2)
         with col_d1:
-            fig_vol_dia = px.bar(df_dia_view, x='DATA', y='LIBERADOS', color='TRANSPORTADORA', barmode='group', title=f"Fluxo de Saída ({dia_label})", text_auto=True)
+            df_dia_view['TXT_VOL'] = df_dia_view['LIBERADOS'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
+            fig_vol_dia = px.bar(df_dia_view, x='DATA', y='LIBERADOS', color='TRANSPORTADORA', barmode='group', title=f"Fluxo de Saída ({dia_label})", text='TXT_VOL')
             fig_vol_dia.update_xaxes(tickformat="%d/%m/%Y")
-            fig_vol_dia.update_traces(textfont_size=18, texttemplate='%{y:,.0f}')
+            fig_vol_dia.update_traces(textfont_size=18, texttemplate='%{text}')
             fig_vol_dia.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_title="Data", yaxis_title="Volume", yaxis_tickformat=',.0f')
             st.plotly_chart(fig_vol_dia, key="dia_vol", width="stretch")
             st.caption("📊 **Volume:** Quantidade de veículos liberados por dia.")
@@ -765,10 +771,11 @@ def app():
             df_dia_malha = df_dia_view.groupby(['DATA', 'TRANSPORTADORA'])[['LIBERADOS', 'MALHA']].sum().reset_index()
             # Cálculo da Taxa de Retenção (%) usando função auxiliar
             df_dia_malha['MALHA_PCT'] = df_dia_malha.apply(calculate_retention_rate, axis=1)
+            df_dia_malha['TXT_PCT'] = df_dia_malha['MALHA_PCT'].apply(lambda x: f"{x:.2f}".replace(".", ",") + "%")
             
-            fig_malha_dia = px.bar(df_dia_malha, x='DATA', y='MALHA_PCT', color='TRANSPORTADORA', title=f"Taxa de Retenção % ({dia_label})")
+            fig_malha_dia = px.bar(df_dia_malha, x='DATA', y='MALHA_PCT', color='TRANSPORTADORA', title=f"Taxa de Retenção % ({dia_label})", text='TXT_PCT')
             fig_malha_dia.update_xaxes(tickformat="%d/%m/%Y")
-            fig_malha_dia.update_traces(texttemplate='%{y:.2f}%', textposition='auto', textfont_size=18)
+            fig_malha_dia.update_traces(texttemplate='%{text}', textposition='auto', textfont_size=18)
             fig_malha_dia.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_title="Data", yaxis_title="Retenção (%)")
             st.plotly_chart(fig_malha_dia, key="dia_malha", width="stretch")
             st.caption("🛡️ **Auditoria:** % de veículos retidos sobre o total.")
@@ -791,17 +798,19 @@ def app():
         df_mes = df_mes_filtered.groupby(['Mês_Ano', 'TRANSPORTADORA'])[['LIBERADOS', 'MALHA']].sum().reset_index()
         col_m1, col_m2 = st.columns(2)
         with col_m1:
-            fig_vol_mes = px.bar(df_mes, x='Mês_Ano', y='LIBERADOS', color='TRANSPORTADORA', barmode='group', title=f"Fluxo de Saída por Mês ({anos_label})", text_auto=True)
-            fig_vol_mes.update_traces(textfont_size=18, texttemplate='%{y:,.0f}')
+            df_mes['TXT_VOL'] = df_mes['LIBERADOS'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
+            fig_vol_mes = px.bar(df_mes, x='Mês_Ano', y='LIBERADOS', color='TRANSPORTADORA', barmode='group', title=f"Fluxo de Saída por Mês ({anos_label})", text='TXT_VOL')
+            fig_vol_mes.update_traces(textfont_size=18, texttemplate='%{text}')
             fig_vol_mes.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_title="Mês", yaxis_title="Volume", yaxis_tickformat=',.0f')
             st.plotly_chart(fig_vol_mes, key="mes_vol", width="stretch")
             st.caption("📊 **Sazonalidade:** Volume acumulado de liberados por mês.")
         with col_m2:
             # Cálculo da Taxa de Retenção (%) usando função auxiliar
             df_mes['MALHA_PCT'] = df_mes.apply(calculate_retention_rate, axis=1)
+            df_mes['TXT_PCT'] = df_mes['MALHA_PCT'].apply(lambda x: f"{x:.2f}".replace(".", ",") + "%")
             
-            fig_malha_mes = px.bar(df_mes, x='Mês_Ano', y='MALHA_PCT', color='TRANSPORTADORA', title=f"Taxa de Retenção % por Mês ({anos_label})")
-            fig_malha_mes.update_traces(texttemplate='%{y:.2f}%', textposition='auto', textfont_size=18)
+            fig_malha_mes = px.bar(df_mes, x='Mês_Ano', y='MALHA_PCT', color='TRANSPORTADORA', title=f"Taxa de Retenção % por Mês ({anos_label})", text='TXT_PCT')
+            fig_malha_mes.update_traces(texttemplate='%{text}', textposition='auto', textfont_size=18)
             fig_malha_mes.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_title="Mês", yaxis_title="Retenção (%)")
             st.plotly_chart(fig_malha_mes, key="mes_malha", width="stretch")
             st.caption("🛡️ **Tendência:** Variação mensal da taxa de retenção na malha fina.")
@@ -812,17 +821,19 @@ def app():
         df_ano = df_filtered.groupby(['Ano', 'TRANSPORTADORA'])[['LIBERADOS', 'MALHA']].sum().reset_index()
         col_a1, col_a2 = st.columns(2)
         with col_a1:
-            fig_vol_ano = px.bar(df_ano, x='Ano', y='LIBERADOS', color='TRANSPORTADORA', barmode='group', title=f"Fluxo de Saída por Ano ({anos_label})", text_auto=True)
-            fig_vol_ano.update_traces(textfont_size=18, texttemplate='%{y:,.0f}')
+            df_ano['TXT_VOL'] = df_ano['LIBERADOS'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
+            fig_vol_ano = px.bar(df_ano, x='Ano', y='LIBERADOS', color='TRANSPORTADORA', barmode='group', title=f"Fluxo de Saída por Ano ({anos_label})", text='TXT_VOL')
+            fig_vol_ano.update_traces(textfont_size=18, texttemplate='%{text}')
             fig_vol_ano.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_title="Ano", yaxis_title="Volume", yaxis_tickformat=',.0f')
             st.plotly_chart(fig_vol_ano, key="ano_vol", width="stretch")
             st.caption("📊 **Histórico:** Volume total de liberados por ano.")
         with col_a2:
             # Cálculo da Taxa de Retenção (%) usando função auxiliar
             df_ano['MALHA_PCT'] = df_ano.apply(calculate_retention_rate, axis=1)
+            df_ano['TXT_PCT'] = df_ano['MALHA_PCT'].apply(lambda x: f"{x:.2f}".replace(".", ",") + "%")
             
-            fig_malha_ano = px.bar(df_ano, x='Ano', y='MALHA_PCT', color='TRANSPORTADORA', title=f"Taxa de Retenção % por Ano ({anos_label})")
-            fig_malha_ano.update_traces(texttemplate='%{y:.2f}%', textposition='auto', textfont_size=18)
+            fig_malha_ano = px.bar(df_ano, x='Ano', y='MALHA_PCT', color='TRANSPORTADORA', title=f"Taxa de Retenção % por Ano ({anos_label})", text='TXT_PCT')
+            fig_malha_ano.update_traces(texttemplate='%{text}', textposition='auto', textfont_size=18)
             fig_malha_ano.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_title="Ano", yaxis_title="Retenção (%)")
             st.plotly_chart(fig_malha_ano, key="ano_malha", width="stretch")
             st.caption("🛡️ **Consolidado:** Taxa média anual de retenção para auditoria.")
