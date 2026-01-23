@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import io
+import plotly.express as px
 from github import Github, GithubException
 
 def get_github_connection():
@@ -64,3 +65,20 @@ def save_data_to_github(df, target_path, commit_message="Atualizando dados"):
     except Exception as e:
         st.error(f"Erro ao salvar no GitHub: {e}")
         return False
+
+# --- GERENCIADOR DE TEMAS E CORES (COMPARTILHADO) ---
+def get_theme_colors(theme="Padrão"):
+    """Retorna a lista de cores baseada no tema escolhido."""
+    themes = {
+        "Padrão": px.colors.qualitative.Alphabet + px.colors.qualitative.Dark24,
+        "Vibrante": px.colors.qualitative.Bold + px.colors.qualitative.Prism,
+        "Pastel": px.colors.qualitative.Pastel + px.colors.qualitative.Set3,
+        "Alto Contraste": px.colors.qualitative.G10 + px.colors.qualitative.T10
+    }
+    return themes.get(theme, themes["Padrão"])
+
+def get_color_map(items, theme="Padrão"):
+    """Gera um dicionário {Item: Cor} consistente para uma lista de itens."""
+    palette = get_theme_colors(theme)
+    unique_items = sorted(list(set(items)))
+    return {item: palette[i % len(palette)] for i, item in enumerate(unique_items)}

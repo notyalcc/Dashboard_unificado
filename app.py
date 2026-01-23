@@ -164,6 +164,15 @@ def app():
                 del st.session_state[k]
         st.rerun()
 
+    # --- SELETOR DE TEMA (KIT DE CORES) ---
+    st.sidebar.markdown("---")
+    st.sidebar.header("🎨 Personalização")
+    tema_selecionado = st.sidebar.selectbox(
+        "Kit de Cores", 
+        ["Padrão", "Vibrante", "Pastel", "Alto Contraste"],
+        index=0
+    )
+
     st.sidebar.markdown("---")
     st.sidebar.markdown(
         """
@@ -174,6 +183,9 @@ def app():
 
     # ================= DASHBOARD ==================
     if menu == "Dashboard":
+        # Obtém as cores do tema selecionado
+        cores_tema = utils.get_theme_colors(tema_selecionado)
+
         col_img, col_title = st.columns([1, 10])
         with col_img:
             if os.path.exists("logo.gif"):
@@ -265,8 +277,8 @@ def app():
         # ===== KPIs (Cards) =====
         st.markdown("<br>", unsafe_allow_html=True)
         c1, c2, c3 = st.columns(3)
-        c1.markdown(f"<div class='metric-card'>{int(df_filtrado['Voos'].sum())}<div class='small'>Total de Voos</div></div>", unsafe_allow_html=True)
-        c2.markdown(f"<div class='metric-card'>{int(df_filtrado['Rotas'].sum())}<div class='small'>Total de Rotas</div></div>", unsafe_allow_html=True)
+        c1.markdown(f"<div class='metric-card'>{f'{int(df_filtrado['Voos'].sum()):,.0f}'.replace(',', '.')}<div class='small'>Total de Voos</div></div>", unsafe_allow_html=True)
+        c2.markdown(f"<div class='metric-card'>{f'{int(df_filtrado['Rotas'].sum()):,.0f}'.replace(',', '.')}<div class='small'>Total de Rotas</div></div>", unsafe_allow_html=True)
         c3.markdown(f"<div class='metric-card'>{df_filtrado['Operador'].nunique()}<div class='small'>Operadores</div></div>", unsafe_allow_html=True)
 
         hoje = datetime.now().date()
@@ -286,7 +298,7 @@ def app():
         st.markdown("### 📊 Produção por Operador (Dia)")
         dia = base_dia.groupby("Operador")[["Rotas","Voos"]].sum().reset_index()
         fig_dia = px.bar(dia, x="Operador", y=["Rotas","Voos"], barmode="group",
-                        template="plotly_white", color_discrete_sequence=["#0052cc", "#3eac50"])
+                        template="plotly_white", color_discrete_sequence=cores_tema)
         fig_dia.update_traces(textfont_size=20)
         fig_dia.for_each_trace(lambda t: t.update(text=[f"{y:,.0f}".replace(",", ".") for y in t.y], texttemplate='%{text}'))
         fig_dia.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_tickformat=',.0f')
@@ -331,7 +343,7 @@ def app():
 
         fig_mes = px.bar(mes, x="Operador", y=["Rotas","Voos"], barmode="group",
                         facet_col="Mes",
-                        template="plotly_white", color_discrete_sequence=["#0052cc", "#3eac50"])
+                        template="plotly_white", color_discrete_sequence=cores_tema)
         fig_mes.update_traces(textfont_size=20)
         fig_mes.for_each_trace(lambda t: t.update(text=[f"{y:,.0f}".replace(",", ".") for y in t.y], texttemplate='%{text}'))
         fig_mes.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_tickformat=',.0f')
@@ -350,7 +362,7 @@ def app():
 
         geral = df_geral.groupby("Operador")[["Rotas","Voos"]].sum().reset_index()
         fig_geral = px.bar(geral, x="Operador", y=["Rotas","Voos"], barmode="group",
-                        template="plotly_white", color_discrete_sequence=["#0052cc", "#3eac50"])
+                        template="plotly_white", color_discrete_sequence=cores_tema)
         fig_geral.update_traces(textfont_size=20)
         fig_geral.for_each_trace(lambda t: t.update(text=[f"{y:,.0f}".replace(",", ".") for y in t.y], texttemplate='%{text}'))
         fig_geral.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_tickformat=',.0f')
@@ -417,7 +429,7 @@ def app():
                 
                 c_occ1, c_occ2 = st.columns([2, 1])
                 with c_occ1:
-                    fig_occ = px.pie(counts_occ, names="Motivo", values="Qtd", title="Principais Causas de Impacto na Operação", hole=0.4)
+                    fig_occ = px.pie(counts_occ, names="Motivo", values="Qtd", title="Principais Causas de Impacto na Operação", hole=0.4, color_discrete_sequence=cores_tema)
                     fig_occ.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
                     st.plotly_chart(fig_occ, use_container_width=True)
                 with c_occ2:
@@ -492,8 +504,8 @@ def app():
                 operador_input = None
 
             tipo = st.selectbox("Tipo", ["FIXO","RESERVA"])
-            rotas = st.number_input("Rotas", min_value=0, value=1)
-            voos = st.number_input("Voos", min_value=0, value=1)
+            rotas = st.number_input("Rotas", min_value=0, value=1, format="%d")
+            voos = st.number_input("Voos", min_value=0, value=1, format="%d")
             obs = st.text_area("Observações")
 
             submitted = st.form_submit_button("Salvar")
